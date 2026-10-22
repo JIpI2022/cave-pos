@@ -1,0 +1,87 @@
+# ---------------------------------------------------------------------------
+#  Deploiement automatique sur GitHub Pages
+#
+#  Se declenche a chaque « push » sur la branche main (et manuellement depuis
+#  l onglet Actions). Les cles Supabase sont lues dans les SECRETS du depot :
+#  Settings > Secrets and variables > Actions > New repository secret
+#    - VITE_SUPABASE_URL
+#    - VITE_SUPABASE_ANON_KEY
+# ---------------------------------------------------------------------------
+name: Deploiement GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Droits necessaires a la publication Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul deploiement a la fois ; on laisse finir celui qui est en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Compilation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperation du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Installation des dependances
+        run: npm ci
+
+      - name: Verification des types
+        run: npm run typecheck
+
+      - name: Tests automatises (calculs de caisse et de stock)
+        run: npm test
+
+      - name: Compilation de l application
+        env:
+          # https://<utilisateur>.github.io/<depot>/  ->  base = /<depot>/
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::warning::Secrets VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY absents :"
+            echo "::warning::l application affichera l ecran « Configuration Supabase manquante »."
+          fi
+          npm run build
+
+      - name: Page de repli 404 (liens profonds)
+        # L application utilise HashRouter : ce fichier n est qu une securite
+        # supplementaire si quelqu un ouvre une URL sans « # ».
+        run: cp dist/index.html dist/404.html
+
+      - name: Configuration de GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Envoi de l artefact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Mise en ligne
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publication sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

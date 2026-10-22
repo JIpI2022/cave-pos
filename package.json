@@ -1,0 +1,43 @@
+{
+  "name": "cave-pos",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Gestion de cave / depot avec module de caisse (POS) - React + Vite + Supabase",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.45.4",
+    "html5-qrcode": "2.3.8",
+    "idb": "8.0.0",
+    "jsbarcode": "3.11.6",
+    "jspdf": "2.5.1",
+    "lucide-react": "0.441.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.26.2",
+    "recharts": "2.12.7",
+    "xlsx": "0.18.5",
+    "zustand": "4.5.5"
+  },
+  "devDependencies": {
+    "@types/jsbarcode": "3.11.4",
+    "@types/react": "18.3.10",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.1",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.47",
+    "tailwindcss": "3.4.13",
+    "typescript": "5.5.4",
+    "vite": "5.4.8",
+    "vite-plugin-pwa": "0.20.5",
+    "vitest": "2.1.1"
+  }
+}
