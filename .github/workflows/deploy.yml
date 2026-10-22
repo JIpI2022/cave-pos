@@ -61,6 +61,35 @@ jobs:
           if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
             echo "::warning::Secrets VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY absents :"
             echo "::warning::l application affichera l ecran « Configuration Supabase manquante »."
+          else
+            # Verifie la FORME de l'adresse sans jamais l'afficher (GitHub
+            # masquerait la valeur, et la journaliser n'aurait pas de sens).
+            # Attendu : https://<reference-du-projet>.supabase.co
+            # Erreur classique : coller l'adresse du tableau de bord
+            # (https://supabase.com/dashboard/project/...), ce qui rend le
+            # serveur injoignable depuis le navigateur.
+            if ! printf '%s' "$VITE_SUPABASE_URL" \
+                 | grep -qE '^https://[a-z0-9]{16,24}\.supabase\.(co|in)/?$'; then
+              echo "::error::VITE_SUPABASE_URL n'a pas la forme attendue."
+              echo "::error::Attendu : https://<reference>.supabase.co"
+              echo "::error::Reference visible dans Supabase > Project Settings > Data API,"
+              echo "::error::ou dans l'adresse de votre tableau de bord apres /project/."
+              exit 1
+            fi
+            # La cle publishable commence par « sb_publishable_ », l'ancienne
+            # cle anon est un jeton JWT commencant par « eyJ ». Une cle
+            # secrete (« sb_secret_ ») n'a RIEN a faire dans une page web.
+            case "$VITE_SUPABASE_ANON_KEY" in
+              sb_secret_*|*service_role*)
+                echo "::error::VITE_SUPABASE_ANON_KEY semble etre une cle SECRETE."
+                echo "::error::Cette cle contourne toutes les protections : ne la publiez jamais."
+                echo "::error::Utilisez la cle « Publishable » (sb_publishable_...) du projet."
+                exit 1 ;;
+              sb_publishable_*|eyJ*) : ;;
+              *)
+                echo "::warning::VITE_SUPABASE_ANON_KEY n'a pas une forme connue"
+                echo "::warning::(attendu sb_publishable_... ou eyJ...). Verifiez-la." ;;
+            esac
           fi
           npm run build
 
