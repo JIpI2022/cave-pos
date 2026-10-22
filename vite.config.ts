@@ -8,8 +8,16 @@ import path from 'node:path'
 // Le workflow GitHub Actions renseigne VITE_BASE_PATH automatiquement.
 const base = process.env.VITE_BASE_PATH ?? '/cave-pos/'
 
+// Horodatage de la compilation, affiche dans l'application. Permet de savoir
+// d'un coup d'oeil quelle version tourne sur un appareil donne — indispensable
+// quand un telephone garde une ancienne version en cache.
+const dateDeCompilation = new Date().toISOString()
+
 export default defineConfig({
   base,
+  define: {
+    __DATE_COMPILATION__: JSON.stringify(dateDeCompilation),
+  },
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },

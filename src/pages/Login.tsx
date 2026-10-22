@@ -5,6 +5,7 @@ import { Activity, Grape, LogIn, UserPlus } from 'lucide-react'
 import { Alert, Button, Field, Input } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { supabaseHost, testerConnexion } from '@/lib/supabase'
+import { formatDateTime } from '@/lib/format'
 
 type Mode = 'connexion' | 'inscription' | 'oubli'
 
@@ -155,6 +156,8 @@ export default function Login() {
         </p>
         <p className="mt-1 text-center text-[11px] text-slate-500">
           Serveur : <span className="font-mono">{supabaseHost}</span>
+          {' · '}
+          Version du {formatDateTime(__DATE_COMPILATION__)}
         </p>
       </div>
     </div>
