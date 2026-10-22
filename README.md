@@ -393,6 +393,10 @@ update public.profiles set role = 'admin', active = true
  where email = 'votre.adresse@exemple.com';
 ```
 
+> 📄 **Le détail complet est dans [`SECURITE.md`](SECURITE.md)** : ce qui tourne
+> en permanence pour empêcher une régression, les risques assumés, les limites
+> honnêtes du dispositif, et la marche à suivre en cas de doute.
+
 ### Bonnes pratiques
 
 - **Ne publiez jamais la clé `sb_secret_…`** (ou `service_role`) : elle contourne

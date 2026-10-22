@@ -42,6 +42,9 @@ jobs:
       - name: Installation des dependances
         run: npm ci
 
+      - name: Controles de securite
+        run: npm run audit:securite
+
       - name: Verification des types
         run: npm run typecheck
 

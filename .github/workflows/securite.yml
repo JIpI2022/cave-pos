@@ -1,0 +1,79 @@
+# ---------------------------------------------------------------------------
+#  SURVEILLANCE DE SECURITE
+#
+#  S'execute a chaque modification du code, a chaque proposition de
+#  modification, et CHAQUE JOUR meme si personne ne touche au projet
+#  (de nouvelles failles sont publiees en permanence dans les bibliotheques).
+#
+#  Trois gardes :
+#    1. Controles statiques : les regles de securite sont-elles toujours en place ?
+#    2. Dependances : une faille connue a-t-elle ete publiee ?
+#    3. Intrusion : on rejoue reellement les attaques sur une base jetable.
+# ---------------------------------------------------------------------------
+name: Surveillance securite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Tous les jours a 05h17 UTC (05h17 a Abidjan, avant l'ouverture)
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  controles:
+    name: Controles statiques et dependances
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+
+      - name: Regles de securite du schema et du code
+        run: npm run audit:securite
+
+      - name: Verification des types
+        run: npm run typecheck
+
+      - name: Tests des calculs critiques
+        run: npm test
+
+      - name: Failles connues dans les bibliotheques LIVREES au navigateur
+        # Bloquant : ce code part chez le commercant et ses clients.
+        # Les failles deja examinees sont listees dans le script, avec leur
+        # justification et une date de reexamen.
+        run: npm run audit:dependances
+
+      - name: Rapport complet, outils de developpement compris
+        # Informatif : ces paquets ne sont pas livres, mais on garde un oeil.
+        continue-on-error: true
+        run: npm audit
+
+  intrusion:
+    name: Tentatives d'intrusion sur base jetable
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cave_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rejouer les attaques
+        env:
+          PGPASSWORD: postgres
+          PSQL: psql -h localhost -p 5432 -U postgres -d cave_test
+        run: ./scripts/test-intrusion.sh
