@@ -24,10 +24,12 @@ import {
   addDays, formatDate, formatMoney, formatPercent, formatQty, startOfDay, startOfMonth,
   startOfWeek, toIsoDate, PAYMENT_LABELS,
 } from '@/lib/format'
-import { axisTick, CATEGORICAL, compactAmount, GRID, INK, SERIES_MAIN } from '@/lib/chart'
+import { compactAmount, useChartTheme } from '@/lib/chart'
 import type { LowStockRow, PaymentBreakdown, SalesDaily, StockValueRow, TopProduct } from '@/types/database'
 
 export default function Dashboard() {
+  // Teintes de graphique du theme actif (clair ou sombre)
+  const { axisTick, CATEGORICAL, CURSOR, GRID, INK, SERIES_MAIN } = useChartTheme()
   const { currency } = useSettings()
   const [daily, setDaily] = useState<SalesDaily[]>([])
   const [top, setTop] = useState<TopProduct[]>([])
@@ -179,8 +181,8 @@ export default function Dashboard() {
       {/* ---- Graphiques ---- */}
       <div className="mb-4 grid gap-3 lg:grid-cols-2">
         <div className="card p-4">
-          <h2 className="mb-1 font-semibold text-slate-900">Chiffre d affaires des 14 derniers jours</h2>
-          <p className="mb-3 text-xs text-slate-500">Ventes validees, toutes taxes comprises.</p>
+          <h2 className="mb-1 font-semibold text-ink">Chiffre d affaires des 14 derniers jours</h2>
+          <p className="mb-3 text-xs text-ink-3">Ventes validees, toutes taxes comprises.</p>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={last14} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barCategoryGap={2}>
               <CartesianGrid stroke={GRID} vertical={false} />
@@ -190,16 +192,16 @@ export default function Dashboard() {
                 tickFormatter={(v: number) => compactAmount(v, currency.symbol)}
               />
               <Tooltip
-                cursor={{ fill: 'rgba(15,23,42,0.04)' }}
+                cursor={{ fill: CURSOR }}
                 content={({ active, payload, label }) =>
                   active && payload?.length ? (
-                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
-                      <p className="font-semibold text-slate-900">{label}</p>
-                      <p className="text-slate-600">CA : <b>{formatMoney(Number(payload[0].value), currency)}</b></p>
-                      <p className="text-slate-600">
+                    <div className="rounded-lg border border-line bg-card px-3 py-2 text-xs shadow-lg">
+                      <p className="font-semibold text-ink">{label}</p>
+                      <p className="text-ink-2">CA : <b>{formatMoney(Number(payload[0].value), currency)}</b></p>
+                      <p className="text-ink-2">
                         Marge : {formatMoney(Number(payload[0].payload.marge), currency)}
                       </p>
-                      <p className="text-slate-600">{formatQty(payload[0].payload.tickets)} ticket(s)</p>
+                      <p className="text-ink-2">{formatQty(payload[0].payload.tickets)} ticket(s)</p>
                     </div>
                   ) : null
                 }
@@ -210,8 +212,8 @@ export default function Dashboard() {
         </div>
 
         <div className="card p-4">
-          <h2 className="mb-1 font-semibold text-slate-900">Repartition par moyen de paiement</h2>
-          <p className="mb-3 text-xs text-slate-500">
+          <h2 className="mb-1 font-semibold text-ink">Repartition par moyen de paiement</h2>
+          <p className="mb-3 text-xs text-ink-3">
             Mois en cours · total encaisse {formatMoney(totalPayments, currency)}
           </p>
           {totalPayments === 0 ? (
@@ -232,13 +234,13 @@ export default function Dashboard() {
                   axisLine={false} tickLine={false} width={124}
                 />
                 <Tooltip
-                  cursor={{ fill: 'rgba(15,23,42,0.04)' }}
+                  cursor={{ fill: CURSOR }}
                   content={({ active, payload }) =>
                     active && payload?.length ? (
-                      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
-                        <p className="font-semibold text-slate-900">{payload[0].payload.methode}</p>
-                        <p className="text-slate-600">{formatMoney(Number(payload[0].value), currency)}</p>
-                        <p className="text-slate-500">
+                      <div className="rounded-lg border border-line bg-card px-3 py-2 text-xs shadow-lg">
+                        <p className="font-semibold text-ink">{payload[0].payload.methode}</p>
+                        <p className="text-ink-2">{formatMoney(Number(payload[0].value), currency)}</p>
+                        <p className="text-ink-3">
                           {formatPercent((Number(payload[0].value) / totalPayments) * 100, 1)} des encaissements
                         </p>
                       </div>
@@ -263,8 +265,8 @@ export default function Dashboard() {
       <div className="grid gap-3 lg:grid-cols-2">
         {/* ---- Meilleures ventes ---- */}
         <div className="card p-4">
-          <h2 className="mb-1 font-semibold text-slate-900">Meilleures ventes</h2>
-          <p className="mb-3 text-xs text-slate-500">Depuis l origine, par chiffre d affaires TTC.</p>
+          <h2 className="mb-1 font-semibold text-ink">Meilleures ventes</h2>
+          <p className="mb-3 text-xs text-ink-3">Depuis l origine, par chiffre d affaires TTC.</p>
           {top.length === 0 ? (
             <EmptyState title="Aucune vente enregistree" />
           ) : (
@@ -285,16 +287,16 @@ export default function Dashboard() {
                     tickFormatter={(v: string) => (v.length > 22 ? `${v.slice(0, 21)}…` : v)}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(15,23,42,0.04)' }}
+                    cursor={{ fill: CURSOR }}
                     content={({ active, payload }) =>
                       active && payload?.length ? (
-                        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
-                          <p className="font-semibold text-slate-900">{payload[0].payload.product_name}</p>
-                          <p className="text-slate-600">CA : <b>{formatMoney(Number(payload[0].value), currency)}</b></p>
-                          <p className="text-slate-600">
+                        <div className="rounded-lg border border-line bg-card px-3 py-2 text-xs shadow-lg">
+                          <p className="font-semibold text-ink">{payload[0].payload.product_name}</p>
+                          <p className="text-ink-2">CA : <b>{formatMoney(Number(payload[0].value), currency)}</b></p>
+                          <p className="text-ink-2">
                             Marge : {formatMoney(Number(payload[0].payload.marge_ht), currency)}
                           </p>
-                          <p className="text-slate-600">
+                          <p className="text-ink-2">
                             {formatQty(payload[0].payload.qty_sold)} unite(s) vendue(s)
                           </p>
                         </div>
@@ -310,7 +312,7 @@ export default function Dashboard() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-2 text-xs text-ink-3">
                 Le detail chiffre est disponible dans Rapports (export CSV / Excel).
               </p>
             </>
@@ -319,9 +321,9 @@ export default function Dashboard() {
 
         {/* ---- Alertes de stock ---- */}
         <div className="card">
-          <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="font-semibold text-slate-900">Produits sous le seuil d alerte</h2>
-            <p className="text-xs text-slate-500">A commander en priorite.</p>
+          <div className="border-b border-line px-4 py-3">
+            <h2 className="font-semibold text-ink">Produits sous le seuil d alerte</h2>
+            <p className="text-xs text-ink-3">A commander en priorite.</p>
           </div>
           {lowStock.length === 0 ? (
             <EmptyState title="Aucune alerte" description="Tous les stocks sont au-dessus de leur seuil." />
@@ -330,17 +332,17 @@ export default function Dashboard() {
               {lowStock.map((p) => (
                 <tr key={p.id}>
                   <td className="td">
-                    <p className="font-medium text-slate-900">{p.name}</p>
-                    <p className="text-xs text-slate-500">{p.category_label ?? ''}</p>
+                    <p className="font-medium text-ink">{p.name}</p>
+                    <p className="text-xs text-ink-3">{p.category_label ?? ''}</p>
                   </td>
                   <td className="td tabular">
                     <Badge color={Number(p.total_stock) <= 0 ? 'red' : 'amber'}>{formatQty(p.total_stock)}</Badge>
                   </td>
-                  <td className="td tabular text-slate-500">{formatQty(p.stock_alert_threshold)}</td>
+                  <td className="td tabular text-ink-3">{formatQty(p.stock_alert_threshold)}</td>
                   <td className="td tabular font-semibold text-amber-700">
                     {Number(p.missing_qty) > 0 ? `+${formatQty(p.missing_qty)}` : '—'}
                   </td>
-                  <td className="td text-xs text-slate-600">{p.supplier_name ?? '—'}</td>
+                  <td className="td text-xs text-ink-2">{p.supplier_name ?? '—'}</td>
                 </tr>
               ))}
             </Table>

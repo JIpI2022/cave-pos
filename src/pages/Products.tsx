@@ -173,7 +173,7 @@ export default function Products() {
           </Select>
           <Checkbox label="Sous le seuil d alerte" checked={onlyLow} onChange={(e) => setOnlyLow(e.target.checked)} />
           <Checkbox label="Produits desactives" checked={onlyInactive} onChange={(e) => setOnlyInactive(e.target.checked)} />
-          <span className="ml-auto text-sm text-slate-500">{filtered.length} resultat(s)</span>
+          <span className="ml-auto text-sm text-ink-3">{filtered.length} resultat(s)</span>
         </div>
       </div>
 
@@ -194,7 +194,7 @@ export default function Products() {
                 <input
                   type="checkbox"
                   aria-label="Tout selectionner"
-                  className="h-4 w-4 rounded border-slate-300 text-wine-700"
+                  className="h-4 w-4 rounded border-line text-brand"
                   checked={filtered.length > 0 && filtered.every((p) => selected.has(p.id))}
                   onChange={(e) => {
                     const next = new Set(selected)
@@ -207,12 +207,12 @@ export default function Products() {
             ]}
           >
             {filtered.map((p) => (
-              <tr key={p.id} className={`hover:bg-slate-50 ${!p.active ? 'opacity-60' : ''}`}>
+              <tr key={p.id} className={`hover:bg-raised ${!p.active ? 'opacity-60' : ''}`}>
                 <td className="td">
                   <input
                     type="checkbox"
                     aria-label={`Selectionner ${p.name}`}
-                    className="h-4 w-4 rounded border-slate-300 text-wine-700"
+                    className="h-4 w-4 rounded border-line text-brand"
                     checked={selected.has(p.id)}
                     onChange={(e) => {
                       const next = new Set(selected)
@@ -223,21 +223,21 @@ export default function Products() {
                 </td>
                 <td className="td">
                   <button
-                    className="text-left font-medium text-slate-900 hover:text-wine-700"
+                    className="text-left font-medium text-ink hover:text-brand"
                     onClick={() => { setEditing(p); setPrefillBarcode(''); setFormOpen(true) }}
                   >
                     {p.name}
                   </button>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-3">
                     {[p.appellation, p.vintage, formatVolume(p.volume_ml), UNIT_LABELS[p.unit]]
                       .filter(Boolean).join(' · ')}
                   </p>
                 </td>
-                <td className="td font-mono text-xs text-slate-600">
+                <td className="td font-mono text-xs text-ink-2">
                   {p.barcode || p.internal_code}
                   {!p.barcode && <Badge color="blue">interne</Badge>}
                 </td>
-                <td className="td text-xs text-slate-600">{p.category_label ?? '—'}</td>
+                <td className="td text-xs text-ink-2">{p.category_label ?? '—'}</td>
                 <td className="td tabular whitespace-nowrap">{formatMoney(p.purchase_price_ht, currency)}</td>
                 <td className="td tabular whitespace-nowrap font-semibold">{formatMoney(p.sale_price_ttc, currency)}</td>
                 <td className={`td tabular whitespace-nowrap ${p.unit_margin_ht < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
@@ -250,7 +250,7 @@ export default function Products() {
                       {formatQty(p.total_stock)}
                     </span>
                   ) : formatQty(p.total_stock)}
-                  <span className="ml-1 text-xs text-slate-400">/ {formatQty(p.stock_alert_threshold)}</span>
+                  <span className="ml-1 text-xs text-ink-3">/ {formatQty(p.stock_alert_threshold)}</span>
                 </td>
                 <td className="td">
                   {!p.active && <Badge color="slate">inactif</Badge>}
@@ -456,7 +456,7 @@ function ImportDialog({
           >
             Telecharger un modele
           </Button>
-          {filename && <span className="text-sm text-slate-600">{filename}</span>}
+          {filename && <span className="text-sm text-ink-2">{filename}</span>}
         </div>
 
         <Checkbox
@@ -466,7 +466,7 @@ function ImportDialog({
         />
 
         {rows.length > 0 && (
-          <div className="max-h-64 overflow-auto rounded-lg border border-slate-200">
+          <div className="max-h-64 overflow-auto rounded-lg border border-line">
             <Table head={['Nom', 'Categorie', 'Code-barres', 'Achat HT', 'Vente TTC']}>
               {rows.slice(0, 50).map((r, i) => (
                 <tr key={i}>
@@ -479,15 +479,15 @@ function ImportDialog({
               ))}
             </Table>
             {rows.length > 50 && (
-              <p className="px-3 py-2 text-xs text-slate-500">… et {rows.length - 50} autre(s) ligne(s).</p>
+              <p className="px-3 py-2 text-xs text-ink-3">… et {rows.length - 50} autre(s) ligne(s).</p>
             )}
           </div>
         )}
 
         {report.length > 0 && (
-          <div className="space-y-1 rounded-lg bg-slate-50 p-3 text-sm">
+          <div className="space-y-1 rounded-lg bg-raised p-3 text-sm">
             {report.map((m, i) => (
-              <p key={i} className={i === 0 ? 'font-semibold text-slate-800' : 'text-red-700'}>{m}</p>
+              <p key={i} className={i === 0 ? 'font-semibold text-ink' : 'text-red-700'}>{m}</p>
             ))}
           </div>
         )}

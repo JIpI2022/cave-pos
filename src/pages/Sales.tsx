@@ -128,11 +128,11 @@ export default function Sales() {
         ) : (
           <Table head={['Ticket', 'Date', 'Total TTC', 'Paiement', 'Statut', '']}>
             {filtered.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
+              <tr key={s.id} className="hover:bg-raised">
                 <td className="td font-mono font-semibold">{s.ticket_ref}</td>
-                <td className="td whitespace-nowrap text-xs text-slate-600">{formatDateTime(s.created_at)}</td>
+                <td className="td whitespace-nowrap text-xs text-ink-2">{formatDateTime(s.created_at)}</td>
                 <td className="td tabular font-semibold">{formatMoney(s.total_ttc, currency)}</td>
-                <td className="td text-xs text-slate-600">
+                <td className="td text-xs text-ink-2">
                   {s.payments.map((p) => PAYMENT_LABELS[p.method]).join(' + ') || '—'}
                 </td>
                 <td className="td">
@@ -323,14 +323,14 @@ function SaleDetail({
             )}
 
             <div className="grid gap-2 text-sm sm:grid-cols-2">
-              <p><span className="text-slate-500">Date :</span> {formatDateTime(sale.created_at)}</p>
-              <p><span className="text-slate-500">Total :</span> <b>{formatMoney(sale.total_ttc, currency)}</b></p>
-              <p><span className="text-slate-500">HT :</span> {formatMoney(sale.total_ht, currency)}</p>
-              <p><span className="text-slate-500">TVA :</span> {formatMoney(sale.total_vat, currency)}</p>
+              <p><span className="text-ink-3">Date :</span> {formatDateTime(sale.created_at)}</p>
+              <p><span className="text-ink-3">Total :</span> <b>{formatMoney(sale.total_ttc, currency)}</b></p>
+              <p><span className="text-ink-3">HT :</span> {formatMoney(sale.total_ht, currency)}</p>
+              <p><span className="text-ink-3">TVA :</span> {formatMoney(sale.total_vat, currency)}</p>
               {Number(sale.discount_total) > 0 && (
-                <p><span className="text-slate-500">Remises :</span> {formatMoney(sale.discount_total, currency)}</p>
+                <p><span className="text-ink-3">Remises :</span> {formatMoney(sale.discount_total, currency)}</p>
               )}
-              {sale.note && <p className="sm:col-span-2"><span className="text-slate-500">Note :</span> {sale.note}</p>}
+              {sale.note && <p className="sm:col-span-2"><span className="text-ink-3">Note :</span> {sale.note}</p>}
             </div>
 
             <Table head={['Article', 'Qte', 'PU TTC', 'Remise', 'Total', '']}>
@@ -341,12 +341,12 @@ function SaleDetail({
                   <tr key={it.id}>
                     <td className="td">
                       <p className="font-medium">{it.label}</p>
-                      {it.pack_size > 1 && <p className="text-xs text-slate-500">carton de {it.pack_size}</p>}
+                      {it.pack_size > 1 && <p className="text-xs text-ink-3">carton de {it.pack_size}</p>}
                       {already > 0 && <p className="text-xs text-amber-700">{formatQty(already)} retournee(s)</p>}
                     </td>
                     <td className="td tabular">{formatQty(it.quantity)}</td>
                     <td className="td tabular">{formatMoney(it.unit_price_ttc, currency)}</td>
-                    <td className="td tabular text-slate-500">
+                    <td className="td tabular text-ink-3">
                       {Number(it.line_discount) > 0 ? `- ${formatMoney(it.line_discount, currency)}` : '—'}
                     </td>
                     <td className="td tabular font-semibold">{formatMoney(it.line_ttc, currency)}</td>
@@ -369,7 +369,7 @@ function SaleDetail({
 
             <div>
               <p className="label">Paiements</p>
-              <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+              <ul className="divide-y divide-line rounded-lg border border-line">
                 {sale.payments.map((p) => (
                   <li key={p.id} className="flex justify-between px-3 py-2 text-sm">
                     <span>
@@ -387,7 +387,7 @@ function SaleDetail({
             {returns.length > 0 && (
               <div>
                 <p className="label">Retours enregistres</p>
-                <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+                <ul className="divide-y divide-line rounded-lg border border-line">
                   {returns.map((r) => (
                     <li key={r.id} className="flex justify-between px-3 py-2 text-sm">
                       <span>{formatDateTime(r.created_at)} · {formatQty(r.quantity)} · {r.reason}</span>

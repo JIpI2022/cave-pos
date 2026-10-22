@@ -225,11 +225,11 @@ export default function Pos() {
     return (
       <div className="mx-auto max-w-lg">
         <div className="card p-6 text-center">
-          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-wine-50 text-wine-700">
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-brand-soft text-brand">
             <Lock className="h-6 w-6" />
           </div>
-          <h1 className="text-lg font-bold text-slate-900">La caisse est fermee</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-lg font-bold text-ink">La caisse est fermee</h1>
+          <p className="mt-1 text-sm text-ink-3">
             Ouvrez la caisse en indiquant le fond de caisse pour commencer a encaisser.
           </p>
           <Button icon={Unlock} size="lg" className="mt-4" onClick={() => setOpenCash(true)}>
@@ -258,9 +258,9 @@ export default function Pos() {
       <div className="card mb-3 flex flex-wrap items-center justify-between gap-2 p-3">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <Badge color="green">Caisse ouverte</Badge>
-          <span className="text-slate-600">{salesLocation.name}</span>
-          <span className="text-slate-400">·</span>
-          <span className="text-slate-600">Fond : {formatMoney(session.opening_float, currency)}</span>
+          <span className="text-ink-2">{salesLocation.name}</span>
+          <span className="text-ink-3">·</span>
+          <span className="text-ink-2">Fond : {formatMoney(session.opening_float, currency)}</span>
           {catalog.fromCache && (
             <Badge color="amber"><CloudOff className="h-3 w-3" /> catalogue local</Badge>
           )}
@@ -317,7 +317,7 @@ export default function Pos() {
       </div>
 
       {/* ---- Barre panier (mobile) ---- */}
-      <div className="safe-bottom fixed inset-x-0 bottom-14 z-20 border-t border-slate-200 bg-white p-2 lg:hidden">
+      <div className="safe-bottom fixed inset-x-0 bottom-14 z-20 border-t border-line bg-card p-2 lg:hidden">
         <Button
           size="lg" className="w-full justify-between" icon={ShoppingCart}
           onClick={() => setCartOpen(true)}
@@ -395,7 +395,7 @@ function CategoryChips({ value, onChange }: { value: string; onChange: (v: strin
     <>
       <button
         onClick={() => onChange('')}
-        className={`badge ${value === '' ? 'bg-wine-700 text-white' : 'bg-slate-100 text-slate-600'}`}
+        className={`badge ${value === '' ? 'bg-brand text-white' : 'bg-raised text-ink-2'}`}
       >
         Tout
       </button>
@@ -403,7 +403,7 @@ function CategoryChips({ value, onChange }: { value: string; onChange: (v: strin
         <button
           key={c.id}
           onClick={() => onChange(value === c.id ? '' : c.id)}
-          className={`badge ${value === c.id ? 'bg-wine-700 text-white' : 'bg-slate-100 text-slate-600'}`}
+          className={`badge ${value === c.id ? 'bg-brand text-white' : 'bg-raised text-ink-2'}`}
         >
           {c.label}
         </button>
@@ -425,23 +425,23 @@ function ProductTile({
   const low = product.total_stock <= 0
   return (
     <div className={`flex flex-col rounded-lg border p-2 text-left transition ${
-      low ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white hover:border-wine-300'}`}>
+      low ? 'border-amber-300 bg-amber-50' : 'border-line bg-card hover:border-brand/40'}`}>
       <button onClick={() => onAdd(false)} className="flex-1 text-left">
-        <p className="line-clamp-2 text-sm font-semibold text-slate-900">{product.name}</p>
-        <p className="text-xs text-slate-500">
+        <p className="line-clamp-2 text-sm font-semibold text-ink">{product.name}</p>
+        <p className="text-xs text-ink-3">
           {[product.appellation, product.vintage, formatVolume(product.volume_ml)].filter(Boolean).join(' · ')}
         </p>
-        <p className="tabular mt-1 text-base font-bold text-wine-700">
+        <p className="tabular mt-1 text-base font-bold text-brand">
           {formatMoney(product.sale_price_ttc, currency)}
         </p>
-        <p className={`text-xs ${low ? 'font-semibold text-amber-700' : 'text-slate-400'}`}>
+        <p className={`text-xs ${low ? 'font-semibold text-amber-700' : 'text-ink-3'}`}>
           Stock : {formatQty(product.total_stock)}
         </p>
       </button>
       {product.pack_size > 1 && (
         <button
           onClick={() => onAdd(true)}
-          className="mt-1 rounded bg-slate-100 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+          className="mt-1 rounded bg-raised py-1 text-xs font-semibold text-ink-2 hover:bg-line"
         >
           + carton de {product.pack_size}
         </button>
@@ -469,12 +469,12 @@ function CartPanel({
   return (
     <div className={embedded ? '' : 'card sticky top-4 flex max-h-[calc(100vh-7rem)] flex-col'}>
       {!embedded && (
-        <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
-          <h2 className="flex items-center gap-2 font-semibold text-slate-900">
+        <div className="flex items-center justify-between border-b border-line px-3 py-2">
+          <h2 className="flex items-center gap-2 font-semibold text-ink">
             <ShoppingCart className="h-4 w-4" /> Panier
           </h2>
           {cart.lines.length > 0 && (
-            <button onClick={cart.clear} className="text-xs text-slate-500 hover:text-red-600">
+            <button onClick={cart.clear} className="text-xs text-ink-3 hover:text-red-600">
               Vider
             </button>
           )}
@@ -483,7 +483,7 @@ function CartPanel({
 
       <div className={embedded ? 'space-y-2' : 'flex-1 space-y-2 overflow-y-auto p-3'}>
         {cart.lines.length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-400">
+          <p className="py-6 text-center text-sm text-ink-3">
             Scannez un article ou touchez un produit pour commencer.
           </p>
         ) : (
@@ -491,18 +491,18 @@ function CartPanel({
             const computed = totals.lines[i]
             const insufficient = line.knownStock > 0 && line.quantity * line.packSize > line.knownStock
             return (
-              <div key={line.key} className="rounded-lg border border-slate-200 p-2">
+              <div key={line.key} className="rounded-lg border border-line p-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900">{line.label}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="truncate text-sm font-semibold text-ink">{line.label}</p>
+                    <p className="text-xs text-ink-3">
                       {formatMoney(computed?.unitPriceTtc ?? line.unitPriceTtc, currency)} / {line.unit}
                       {line.packSize > 1 && ` (${line.packSize} bouteilles)`}
                     </p>
                   </div>
                   <button
                     onClick={() => cart.removeLine(line.key)}
-                    className="shrink-0 text-slate-400 hover:text-red-600"
+                    className="shrink-0 text-ink-3 hover:text-red-600"
                     aria-label="Retirer l article"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -513,7 +513,7 @@ function CartPanel({
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => cart.changeQuantity(line.key, -1)}
-                      className="grid h-9 w-9 place-items-center rounded-lg bg-slate-100 text-slate-700 active:bg-slate-200"
+                      className="grid h-9 w-9 place-items-center rounded-lg bg-raised text-ink-2 active:bg-line"
                       aria-label="Diminuer"
                     >
                       <Minus className="h-4 w-4" />
@@ -522,12 +522,12 @@ function CartPanel({
                       value={line.quantity}
                       onChange={(e) => cart.setQuantity(line.key, parseNumber(e.target.value) ?? 0)}
                       inputMode="decimal"
-                      className="tabular h-9 w-14 rounded-lg border border-slate-200 text-center font-semibold"
+                      className="tabular h-9 w-14 rounded-lg border border-line text-center font-semibold"
                       aria-label="Quantite"
                     />
                     <button
                       onClick={() => cart.changeQuantity(line.key, 1)}
-                      className="grid h-9 w-9 place-items-center rounded-lg bg-slate-100 text-slate-700 active:bg-slate-200"
+                      className="grid h-9 w-9 place-items-center rounded-lg bg-raised text-ink-2 active:bg-line"
                       aria-label="Augmenter"
                     >
                       <Plus className="h-4 w-4" />
@@ -536,16 +536,16 @@ function CartPanel({
 
                   <div className="text-right">
                     {computed && computed.totalDiscount > 0 && (
-                      <p className="text-xs text-slate-400 line-through">{formatMoney(computed.gross, currency)}</p>
+                      <p className="text-xs text-ink-3 line-through">{formatMoney(computed.gross, currency)}</p>
                     )}
-                    <p className="tabular font-bold text-slate-900">{formatMoney(computed?.ttc ?? 0, currency)}</p>
+                    <p className="tabular font-bold text-ink">{formatMoney(computed?.ttc ?? 0, currency)}</p>
                   </div>
                 </div>
 
                 <div className="mt-1 flex items-center justify-between gap-2">
                   <button
                     onClick={() => onLineDiscount(line.key)}
-                    className="flex items-center gap-1 text-xs font-medium text-wine-700 hover:underline"
+                    className="flex items-center gap-1 text-xs font-medium text-brand hover:underline"
                   >
                     <Percent className="h-3 w-3" />
                     {line.discountType === 'aucune'
@@ -562,7 +562,7 @@ function CartPanel({
         )}
       </div>
 
-      <div className={embedded ? 'mt-3 space-y-2' : 'space-y-2 border-t border-slate-200 p-3'}>
+      <div className={embedded ? 'mt-3 space-y-2' : 'space-y-2 border-t border-line p-3'}>
         <Field label="Client (facultatif)">
           <Select value={cart.customerId ?? ''} onChange={(e) => cart.setCustomer(e.target.value || null)}>
             <option value="">Client de passage</option>
@@ -576,7 +576,7 @@ function CartPanel({
             <Row label="Remises de ligne" value={`- ${formatMoney(totals.lineDiscountTotal, currency)}`} />
           )}
           <div className="flex items-center justify-between">
-            <button onClick={onTicketDiscount} className="flex items-center gap-1 text-wine-700 hover:underline">
+            <button onClick={onTicketDiscount} className="flex items-center gap-1 text-brand hover:underline">
               <Percent className="h-3.5 w-3.5" />
               Remise sur le ticket
             </button>
@@ -588,7 +588,7 @@ function CartPanel({
           <Row label="TVA" value={formatMoney(totals.totalVat, currency)} muted />
         </div>
 
-        <div className="flex items-baseline justify-between rounded-lg bg-slate-900 px-3 py-2 text-white">
+        <div className="flex items-baseline justify-between rounded-lg bg-strong px-3 py-2 text-strong-ink">
           <span className="text-sm font-semibold uppercase tracking-wide">Total</span>
           <span className="tabular text-2xl font-bold">{formatMoney(totals.totalTtc, currency)}</span>
         </div>
@@ -603,7 +603,7 @@ function CartPanel({
 
 function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
-    <div className={`flex justify-between ${muted ? 'text-slate-500' : ''}`}>
+    <div className={`flex justify-between ${muted ? 'text-ink-3' : ''}`}>
       <span>{label}</span><span className="tabular">{value}</span>
     </div>
   )
@@ -656,14 +656,14 @@ function LineDiscountDialog({
           <button
             onClick={() => setType('pourcentage')}
             className={`rounded-lg border py-2 text-sm font-semibold ${
-              type === 'pourcentage' ? 'border-wine-700 bg-wine-50 text-wine-800' : 'border-slate-200'}`}
+              type === 'pourcentage' ? 'border-brand bg-brand-soft text-brand-soft-ink' : 'border-line'}`}
           >
             En pourcentage
           </button>
           <button
             onClick={() => setType('montant')}
             className={`rounded-lg border py-2 text-sm font-semibold ${
-              type === 'montant' ? 'border-wine-700 bg-wine-50 text-wine-800' : 'border-slate-200'}`}
+              type === 'montant' ? 'border-brand bg-brand-soft text-brand-soft-ink' : 'border-line'}`}
           >
             En montant
           </button>
@@ -719,14 +719,14 @@ function TicketDiscountDialog({ open, onClose }: { open: boolean; onClose: () =>
           <button
             onClick={() => setType('pourcentage')}
             className={`rounded-lg border py-2 text-sm font-semibold ${
-              type === 'pourcentage' ? 'border-wine-700 bg-wine-50 text-wine-800' : 'border-slate-200'}`}
+              type === 'pourcentage' ? 'border-brand bg-brand-soft text-brand-soft-ink' : 'border-line'}`}
           >
             En pourcentage
           </button>
           <button
             onClick={() => setType('montant')}
             className={`rounded-lg border py-2 text-sm font-semibold ${
-              type === 'montant' ? 'border-wine-700 bg-wine-50 text-wine-800' : 'border-slate-200'}`}
+              type === 'montant' ? 'border-brand bg-brand-soft text-brand-soft-ink' : 'border-line'}`}
           >
             En montant
           </button>
@@ -781,7 +781,7 @@ function UnknownCodeDialog({
             <span className="font-mono font-bold">{code}</span>.
           </p>
           {canCreate ? (
-            <p className="text-slate-500">
+            <p className="text-ink-3">
               Vous pouvez creer la fiche produit immediatement : le code sera prerempli.
             </p>
           ) : (

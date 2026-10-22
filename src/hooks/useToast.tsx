@@ -39,7 +39,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => {
           const style = {
             success: 'bg-emerald-600', error: 'bg-red-600',
-            info: 'bg-slate-800', warning: 'bg-amber-600',
+            info: 'bg-stone-800', warning: 'bg-ambre-600',
           }[t.kind]
           const Icon = { success: CheckCircle2, error: XCircle, info: Info, warning: TriangleAlert }[t.kind]
           return (

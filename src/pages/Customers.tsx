@@ -81,8 +81,8 @@ export default function Customers() {
         ) : (
           <Table head={['Nom', 'Telephone', 'E-mail', 'Statut', '']}>
             {filtered.map((c) => (
-              <tr key={c.id} className="hover:bg-slate-50">
-                <td className="td font-medium text-slate-900">{c.name}</td>
+              <tr key={c.id} className="hover:bg-raised">
+                <td className="td font-medium text-ink">{c.name}</td>
                 <td className="td text-sm">{c.phone || '—'}</td>
                 <td className="td text-sm">{c.email || '—'}</td>
                 <td className="td">{c.active ? <Badge color="green">actif</Badge> : <Badge color="slate">inactif</Badge>}</td>
@@ -213,7 +213,7 @@ function HistoryDialog({
         <EmptyState title="Aucun achat enregistre" description="Selectionnez ce client en caisse pour rattacher ses achats." />
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-ink-2">
             {sales.length} ticket(s) · total achete <b>{formatMoney(total, currency)}</b>
           </p>
           <Table head={['Ticket', 'Date', 'Total TTC', 'Statut']}>

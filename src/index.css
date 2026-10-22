@@ -2,51 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===========================================================================
+   JETONS DE COULEUR
+   Valeurs en composantes RVB separees par des espaces, pour que Tailwind
+   puisse leur appliquer une transparence (bg-brand/10).
+   Le mode sombre redefinit les memes jetons : aucun ecran a reecrire.
+   =========================================================================== */
 @layer base {
+  :root {
+    --surface: 250 250 249;        /* pierre-50  : fond de page */
+    --card: 255 255 255;           /* blanc      : cartes, tableaux */
+    --raised: 245 245 244;         /* pierre-100 : champs, survol */
+    --line: 231 229 228;           /* pierre-200 : bordures */
+    --ink: 28 25 23;               /* pierre-900 : texte principal   17.5:1 */
+    --ink-2: 87 83 78;             /* pierre-600 : texte secondaire   7.6:1 */
+    --ink-3: 120 113 108;          /* pierre-500 : texte discret      4.8:1 */
+    --brand: 138 79 21;            /* ambre-700  : actions            6.5:1 */
+    --brand-ink: 255 255 255;
+    --brand-soft: 253 248 237;     /* ambre-50 */
+    --brand-soft-ink: 112 65 24;   /* ambre-800 */
+    --strong: 28 25 23;            /* bandeau de total */
+    --strong-ink: 250 250 249;
+  }
+
+  .dark {
+    --surface: 12 10 9;            /* pierre-950 */
+    --card: 28 25 23;              /* pierre-900 */
+    --raised: 41 37 36;            /* pierre-800 */
+    --line: 68 64 60;              /* pierre-700 */
+    --ink: 250 250 249;            /* pierre-50  : texte principal  16.7:1 */
+    --ink-2: 214 211 209;          /* pierre-300 : secondaire       11.7:1 */
+    --ink-3: 168 162 158;          /* pierre-400 : discret           6.9:1 */
+    --brand: 218 160 62;           /* ambre-400  : actions           7.6:1 */
+    --brand-ink: 54 28 8;          /* ambre-950  : texte sur ambre   8.5:1 */
+    --brand-soft: 54 28 8;         /* ambre-950 */
+    --brand-soft-ink: 230 189 107; /* ambre-300 */
+    --strong: 138 79 21;           /* ambre-700 : le total reste chaud */
+    --strong-ink: 253 248 237;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-slate-100 text-slate-800 antialiased;
+    @apply bg-surface text-ink antialiased;
     font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   }
-  /* Les champs de saisie font au moins 16px sur mobile : iOS ne zoome plus au focus */
-  input, select, textarea {
-    font-size: max(16px, 1rem);
-  }
-  /* Masque les fleches des champs numeriques (saisie tactile en caisse) */
+  /* Au moins 16px sur mobile : iOS ne zoome plus au focus d'un champ */
+  input, select, textarea { font-size: max(16px, 1rem); }
+  /* Fleches des champs numeriques masquees (saisie tactile en caisse) */
   input[type='number']::-webkit-outer-spin-button,
   input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type='number'] { -moz-appearance: textfield; }
+  /* Les champs de date restent lisibles en mode sombre */
+  .dark input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.8); }
 }
 
 @layer components {
-  .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
-  }
-  .label {
-    @apply mb-1 block text-sm font-medium text-slate-600;
-  }
+  .card { @apply rounded-xl border border-line bg-card shadow-carte; }
+  .label { @apply mb-1 block text-sm font-medium text-ink-2; }
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900
-           shadow-sm outline-none transition focus:border-wine-600 focus:ring-2 focus:ring-wine-200
-           disabled:cursor-not-allowed disabled:bg-slate-100;
+    @apply w-full rounded-lg border border-line bg-card px-3 py-2 text-ink shadow-sm outline-none
+           transition placeholder:text-ink-3
+           focus:border-brand focus:ring-2 focus:ring-brand/30
+           disabled:cursor-not-allowed disabled:bg-raised disabled:text-ink-3;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold
-           transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+           transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40;
   }
-  .btn-primary { @apply btn bg-wine-700 text-white hover:bg-wine-800; }
-  .btn-secondary { @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50; }
+  .btn-primary { @apply btn bg-brand text-brand-ink hover:brightness-110; }
+  .btn-secondary { @apply btn border border-line bg-card text-ink-2 hover:bg-raised hover:text-ink; }
   .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
-  .btn-ghost { @apply btn text-slate-600 hover:bg-slate-100; }
+  .btn-ghost { @apply btn text-ink-2 hover:bg-raised hover:text-ink; }
   .btn-lg { @apply px-5 py-3 text-base; }
-  .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold;
-  }
+  .badge { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold; }
   .th {
-    @apply whitespace-nowrap px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply whitespace-nowrap px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-3;
   }
   .td { @apply px-3 py-2 align-middle; }
   .tabular { font-variant-numeric: tabular-nums; }
@@ -54,10 +88,10 @@
 
 /* Barre de defilement discrete */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { @apply rounded-full bg-slate-300; }
-::-webkit-scrollbar-thumb:hover { @apply bg-slate-400; }
+::-webkit-scrollbar-thumb { @apply rounded-full bg-line; }
+::-webkit-scrollbar-thumb:hover { @apply bg-ink-3; }
 
-/* Styles d'impression : on ne sort que la zone marquee « print-area » */
+/* Impression : on ne sort que la zone marquee « print-area » */
 @media print {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }

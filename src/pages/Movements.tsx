@@ -130,25 +130,25 @@ export default function Movements() {
         ) : (
           <Table head={['Date', 'Type', 'Produit', 'Emplacement', 'Quantite', 'Motif', 'Reference', 'Utilisateur']}>
             {filtered.map((m) => (
-              <tr key={m.id} className="hover:bg-slate-50">
-                <td className="td whitespace-nowrap text-xs text-slate-600">{formatDateTime(m.created_at)}</td>
+              <tr key={m.id} className="hover:bg-raised">
+                <td className="td whitespace-nowrap text-xs text-ink-2">{formatDateTime(m.created_at)}</td>
                 <td className="td"><Badge color={TYPE_COLORS[m.type]}>{MOVEMENT_LABELS[m.type] ?? m.type}</Badge></td>
                 <td className="td">
-                  <p className="font-medium text-slate-900">{m.product_name}</p>
-                  <p className="font-mono text-xs text-slate-500">{m.barcode || m.internal_code}</p>
+                  <p className="font-medium text-ink">{m.product_name}</p>
+                  <p className="font-mono text-xs text-ink-3">{m.barcode || m.internal_code}</p>
                 </td>
                 <td className="td text-sm">{m.location_name}</td>
                 <td className={`td tabular font-semibold ${m.quantity_delta > 0 ? 'text-emerald-700' : 'text-red-600'}`}>
                   {m.quantity_delta > 0 ? '+' : ''}{formatQty(m.quantity_delta)}
                   {m.unit_cost_ht ? (
-                    <p className="font-normal text-xs text-slate-400">
+                    <p className="font-normal text-xs text-ink-3">
                       {formatMoney(Number(m.unit_cost_ht) * Math.abs(Number(m.quantity_delta)), currency)}
                     </p>
                   ) : null}
                 </td>
-                <td className="td text-sm text-slate-600">{m.reason}</td>
-                <td className="td font-mono text-xs text-slate-500">{m.reference}</td>
-                <td className="td text-xs text-slate-500">{m.user_email ?? '—'}</td>
+                <td className="td text-sm text-ink-2">{m.reason}</td>
+                <td className="td font-mono text-xs text-ink-3">{m.reference}</td>
+                <td className="td text-xs text-ink-3">{m.user_email ?? '—'}</td>
               </tr>
             ))}
           </Table>

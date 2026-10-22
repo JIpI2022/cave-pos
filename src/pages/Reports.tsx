@@ -19,7 +19,7 @@ import {
   addDays, formatDate, formatDateTime, formatMoney, formatPercent, formatQty, startOfMonth,
   toIsoDate, MOVEMENT_LABELS, PAYMENT_LABELS,
 } from '@/lib/format'
-import { axisTick, compactAmount, GRID, SERIES_MAIN, SERIES_SECOND } from '@/lib/chart'
+import { compactAmount, useChartTheme } from '@/lib/chart'
 import { downloadCsv, downloadXlsx, stampedFilename, type ExportColumn } from '@/lib/exports'
 import type {
   MovementFull, PaymentBreakdown, SaleItemFull, SalesDaily, StockByLocation, TopProduct,
@@ -28,6 +28,8 @@ import type {
 type Tab = 'ca' | 'produits' | 'paiements' | 'exports'
 
 export default function Reports() {
+  // Teintes de graphique du theme actif (clair ou sombre)
+  const { axisTick, CURSOR, GRID, SERIES_MAIN, SERIES_SECOND, SURFACE } = useChartTheme()
   const { currency } = useSettings()
   const [tab, setTab] = useState<Tab>('ca')
   const [from, setFrom] = useState(toIsoDate(startOfMonth()))
@@ -175,7 +177,7 @@ export default function Reports() {
           <button
             key={key} onClick={() => setTab(key)}
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
-              tab === key ? 'bg-wine-700 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              tab === key ? 'bg-brand text-white' : 'bg-card text-ink-2 hover:bg-raised'}`}
           >
             {label}
           </button>
@@ -194,8 +196,8 @@ export default function Reports() {
               </div>
 
               <div className="card p-4">
-                <h2 className="mb-1 font-semibold text-slate-900">Chiffre d affaires et marge</h2>
-                <p className="mb-3 text-xs text-slate-500">
+                <h2 className="mb-1 font-semibold text-ink">Chiffre d affaires et marge</h2>
+                <p className="mb-3 text-xs text-ink-3">
                   Deux series a la meme echelle monetaire : CA TTC (barres) et marge brute HT (ligne).
                 </p>
                 {chartData.length === 0 ? (
@@ -210,13 +212,13 @@ export default function Reports() {
                         tickFormatter={(v: number) => compactAmount(v, currency.symbol)}
                       />
                       <Tooltip
-                        cursor={{ fill: 'rgba(15,23,42,0.04)' }}
+                        cursor={{ fill: CURSOR }}
                         content={({ active, payload, label }) =>
                           active && payload?.length ? (
-                            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
-                              <p className="font-semibold text-slate-900">{label}</p>
+                            <div className="rounded-lg border border-line bg-card px-3 py-2 text-xs shadow-lg">
+                              <p className="font-semibold text-ink">{label}</p>
                               {payload.map((s) => (
-                                <p key={String(s.name)} className="text-slate-600">
+                                <p key={String(s.name)} className="text-ink-2">
                                   {s.name} : <b>{formatMoney(Number(s.value), currency)}</b>
                                 </p>
                               ))}
@@ -229,7 +231,7 @@ export default function Reports() {
                       <Line
                         type="monotone" dataKey="marge" name="Marge brute HT"
                         stroke={SERIES_SECOND} strokeWidth={2}
-                        dot={{ r: 4, fill: SERIES_SECOND, stroke: '#ffffff', strokeWidth: 2 }}
+                        dot={{ r: 4, fill: SERIES_SECOND, stroke: SURFACE, strokeWidth: 2 }}
                         activeDot={{ r: 6 }}
                       />
                     </ComposedChart>
@@ -238,8 +240,8 @@ export default function Reports() {
               </div>
 
               <div className="card">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-                  <h2 className="font-semibold text-slate-900">Detail par jour</h2>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+                  <h2 className="font-semibold text-ink">Detail par jour</h2>
                   <div className="flex gap-2">
                     <Button variant="secondary" icon={Download}
                       onClick={() => downloadCsv(daily, dailyColumns, stampedFilename('ca_par_jour', 'csv'))}>CSV</Button>
@@ -255,8 +257,8 @@ export default function Reports() {
                         <td className="td tabular">{r.nb_tickets}</td>
                         <td className="td tabular font-semibold">{formatMoney(r.ca_ttc, currency)}</td>
                         <td className="td tabular">{formatMoney(r.ca_ht, currency)}</td>
-                        <td className="td tabular text-slate-500">{formatMoney(r.total_tva, currency)}</td>
-                        <td className="td tabular text-slate-500">{formatMoney(r.total_remises, currency)}</td>
+                        <td className="td tabular text-ink-3">{formatMoney(r.total_tva, currency)}</td>
+                        <td className="td tabular text-ink-3">{formatMoney(r.total_remises, currency)}</td>
                         <td className="td tabular">{formatMoney(r.panier_moyen, currency)}</td>
                         <td className="td tabular text-emerald-700">{formatMoney(r.marge_ht, currency)}</td>
                       </tr>
@@ -269,10 +271,10 @@ export default function Reports() {
 
           {tab === 'produits' && (
             <div className="card">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
                 <div>
-                  <h2 className="font-semibold text-slate-900">Ventes par produit</h2>
-                  <p className="text-xs text-slate-500">Depuis l origine, 50 premiers par chiffre d affaires.</p>
+                  <h2 className="font-semibold text-ink">Ventes par produit</h2>
+                  <p className="text-xs text-ink-3">Depuis l origine, 50 premiers par chiffre d affaires.</p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="secondary" icon={Download}
@@ -288,7 +290,7 @@ export default function Reports() {
                     return (
                       <tr key={`${r.product_id}-${r.product_name}`}>
                         <td className="td font-medium">{r.product_name}</td>
-                        <td className="td text-xs text-slate-600">{r.category_label ?? '—'}</td>
+                        <td className="td text-xs text-ink-2">{r.category_label ?? '—'}</td>
                         <td className="td tabular">{formatQty(r.qty_sold)}</td>
                         <td className="td tabular font-semibold">{formatMoney(r.ca_ttc, currency)}</td>
                         <td className="td tabular">{formatMoney(r.ca_ht, currency)}</td>
@@ -304,9 +306,9 @@ export default function Reports() {
 
           {tab === 'paiements' && (
             <div className="card">
-              <div className="border-b border-slate-200 px-4 py-3">
-                <h2 className="font-semibold text-slate-900">Encaissements par moyen de paiement</h2>
-                <p className="text-xs text-slate-500">Ventes validees de la periode selectionnee.</p>
+              <div className="border-b border-line px-4 py-3">
+                <h2 className="font-semibold text-ink">Encaissements par moyen de paiement</h2>
+                <p className="text-xs text-ink-3">Ventes validees de la periode selectionnee.</p>
               </div>
               <Table head={['Moyen de paiement', 'Nombre', 'Total', 'Part']}>
                 {paymentTotals.map((p) => (
@@ -321,9 +323,9 @@ export default function Reports() {
 
               {operatorTotals.length > 0 && (
                 <>
-                  <div className="border-t border-slate-200 px-4 py-3">
-                    <h3 className="font-semibold text-slate-900">Detail du mobile money</h3>
-                    <p className="text-xs text-slate-500">
+                  <div className="border-t border-line px-4 py-3">
+                    <h3 className="font-semibold text-ink">Detail du mobile money</h3>
+                    <p className="text-xs text-ink-3">
                       A rapprocher du releve de chaque operateur.
                     </p>
                   </div>
@@ -471,8 +473,8 @@ function ExportCenter({ from, to }: { from: string; to: string }) {
       {exports.map((e) => (
         <div key={e.key} className="card flex flex-wrap items-center justify-between gap-3 p-4">
           <div className="min-w-0">
-            <h3 className="font-semibold text-slate-900">{e.title}</h3>
-            <p className="text-sm text-slate-500">{e.description}</p>
+            <h3 className="font-semibold text-ink">{e.title}</h3>
+            <p className="text-sm text-ink-3">{e.description}</p>
           </div>
           <div className="flex gap-2">
             <Button

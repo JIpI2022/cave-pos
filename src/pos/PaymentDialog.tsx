@@ -157,11 +157,11 @@ export default function PaymentDialog({
       <div className="grid gap-4 lg:grid-cols-2">
         {/* ---- Colonne gauche : montants ---- */}
         <div className="space-y-3">
-          <div className="rounded-xl bg-slate-900 p-4 text-white">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Total a payer</p>
+          <div className="rounded-xl bg-strong p-4 text-strong-ink">
+            <p className="text-xs uppercase tracking-wide text-ink-3">Total a payer</p>
             <p className="tabular text-3xl font-bold">{formatMoney(totalDue, currency)}</p>
             {payments.length > 0 && (
-              <p className="tabular mt-1 text-sm text-slate-300">
+              <p className="tabular mt-1 text-sm text-strong-ink/80">
                 Deja encaisse {formatMoney(paid, currency)} · reste{' '}
                 <b className="text-white">{formatMoney(remaining, currency)}</b>
               </p>
@@ -175,8 +175,8 @@ export default function PaymentDialog({
                 onClick={() => { setMethod(m.value); setTenderedText(''); setReference('') }}
                 className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs font-semibold transition ${
                   method === m.value
-                    ? 'border-wine-700 bg-wine-50 text-wine-800'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    ? 'border-brand bg-brand-soft text-brand-soft-ink'
+                    : 'border-line bg-card text-ink-2 hover:bg-raised'
                 }`}
               >
                 <m.icon className="h-5 w-5" />
@@ -233,8 +233,8 @@ export default function PaymentDialog({
                         onClick={() => setOperator(op)}
                         className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
                           operator === op
-                            ? 'border-wine-700 bg-wine-50 text-wine-800'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            ? 'border-brand bg-brand-soft text-brand-soft-ink'
+                            : 'border-line bg-card text-ink-2 hover:bg-raised'
                         }`}
                       >
                         {op}
@@ -261,25 +261,25 @@ export default function PaymentDialog({
             {['7', '8', '9', '4', '5', '6', '1', '2', '3', ',', '0', '<'].map((k) => (
               <button
                 key={k} onClick={() => keypad(k)}
-                className="rounded-lg border border-slate-200 bg-white py-4 text-xl font-semibold text-slate-800 active:bg-slate-100"
+                className="rounded-lg border border-line bg-card py-4 text-xl font-semibold text-ink active:bg-raised"
               >
                 {k === '<' ? <Delete className="mx-auto h-5 w-5" /> : k}
               </button>
             ))}
             <button
               onClick={() => keypad('C')}
-              className="col-span-3 rounded-lg border border-slate-200 bg-slate-50 py-2.5 text-sm font-semibold text-slate-600"
+              className="col-span-3 rounded-lg border border-line bg-raised py-2.5 text-sm font-semibold text-ink-2"
             >
               Effacer
             </button>
           </div>
 
           {payments.length > 0 && (
-            <div className="rounded-lg border border-slate-200">
-              <p className="border-b border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div className="rounded-lg border border-line">
+              <p className="border-b border-line px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-3">
                 Paiements enregistres
               </p>
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-line">
                 {payments.map((p, i) => (
                   <li key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                     <span>
@@ -291,7 +291,7 @@ export default function PaymentDialog({
                       <b className="tabular">{formatMoney(p.amount, currency)}</b>
                       <button
                         onClick={() => setPayments((l) => l.filter((_, j) => j !== i))}
-                        className="text-slate-400 hover:text-red-600"
+                        className="text-ink-3 hover:text-red-600"
                         aria-label="Retirer ce paiement"
                       >
                         <Trash2 className="h-4 w-4" />

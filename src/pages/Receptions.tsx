@@ -91,7 +91,7 @@ export default function Receptions() {
         ) : (
           <Table head={['N°', 'Date', 'Fournisseur', 'Emplacement', 'Total HT', 'Statut', '']}>
             {rows.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50">
+              <tr key={r.id} className="hover:bg-raised">
                 <td className="td font-mono font-semibold">{r.number}</td>
                 <td className="td text-sm">{formatDate(r.received_on)}</td>
                 <td className="td text-sm">{suppliers.find((s) => s.id === r.supplier_id)?.name ?? '—'}</td>
@@ -400,7 +400,7 @@ function ReceptionEditor({
         {lines.length === 0 ? (
           <EmptyState title="Aucune ligne" description="Scannez ou cherchez les produits recus." />
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <div className="overflow-x-auto rounded-lg border border-line">
             <Table head={['Produit', 'Colis', 'Bouteilles/colis', 'Total bouteilles', 'Prix achat HT', 'Total HT', 'MAJ prix', '']}>
               {lines.map((l) => {
                 const qty = parseNumber(l.quantity) ?? 0
@@ -443,7 +443,7 @@ function ReceptionEditor({
                       {!readOnly && (
                         <button
                           onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
-                          className="text-slate-400 hover:text-red-600" aria-label="Retirer la ligne"
+                          className="text-ink-3 hover:text-red-600" aria-label="Retirer la ligne"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -456,8 +456,8 @@ function ReceptionEditor({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 p-3">
-          <span className="text-sm text-slate-600">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-raised p-3">
+          <span className="text-sm text-ink-2">
             {formatQty(totalBottles)} bouteille(s) sur {lines.length} ligne(s)
           </span>
           <span className="tabular text-lg font-bold">Total HT : {formatMoney(total, currency)}</span>

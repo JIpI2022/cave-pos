@@ -111,8 +111,8 @@ export default function CashSessions() {
         ) : (
           <Table head={['Ouverte le', 'Point de vente', 'Tickets', 'CA TTC', 'Especes', 'Ecart', 'Statut', '']}>
             {rows.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50">
-                <td className="td whitespace-nowrap text-xs text-slate-600">{formatDateTime(r.opened_at)}</td>
+              <tr key={r.id} className="hover:bg-raised">
+                <td className="td whitespace-nowrap text-xs text-ink-2">{formatDateTime(r.opened_at)}</td>
                 <td className="td text-sm">{r.location_name}</td>
                 <td className="td tabular">{r.nb_tickets}</td>
                 <td className="td tabular font-semibold">{formatMoney(r.ca_ttc, currency)}</td>
@@ -165,15 +165,15 @@ export default function CashSessions() {
             {zRows(detail).map((row) => (
               <div
                 key={row.label}
-                className={`flex items-baseline justify-between gap-3 border-b border-slate-100 py-1 ${
-                  row.strong ? 'font-bold text-slate-900' : 'text-slate-600'}`}
+                className={`flex items-baseline justify-between gap-3 border-b border-line py-1 ${
+                  row.strong ? 'font-bold text-ink' : 'text-ink-2'}`}
               >
                 <span>{row.label}</span>
                 <span className="tabular">{row.value}</span>
               </div>
             ))}
             {detail.notes && (
-              <p className="pt-2 text-xs italic text-slate-500">{detail.notes}</p>
+              <p className="pt-2 text-xs italic text-ink-3">{detail.notes}</p>
             )}
           </div>
         )}

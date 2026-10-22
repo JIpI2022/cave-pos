@@ -72,7 +72,7 @@ export default function LabelsDialog({
       }
     >
       <div className="space-y-4">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-ink-2">
           {products.length} produit(s) selectionne(s) — <b>{items.length} etiquette(s)</b> sur{' '}
           <b>{pages || 0} page(s)</b> A4.
         </p>

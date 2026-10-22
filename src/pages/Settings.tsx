@@ -37,7 +37,7 @@ export default function SettingsPage() {
           <button
             key={key} onClick={() => setTab(key)}
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
-              tab === key ? 'bg-wine-700 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              tab === key ? 'bg-brand text-white' : 'bg-card text-ink-2 hover:bg-raised'}`}
           >
             {label}
           </button>
@@ -134,7 +134,7 @@ function ShopSettings() {
     <div className="card space-y-4 p-4">
       {error && <Alert kind="error">{error}</Alert>}
 
-      <h2 className="font-semibold text-slate-900">Identite de la boutique</h2>
+      <h2 className="font-semibold text-ink">Identite de la boutique</h2>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Nom de la boutique" required>
           <Input value={form.company_name ?? ''} onChange={(e) => set('company_name', e.target.value)} />
@@ -153,7 +153,7 @@ function ShopSettings() {
         </Field>
       </div>
 
-      <h2 className="font-semibold text-slate-900">Devise et TVA</h2>
+      <h2 className="font-semibold text-ink">Devise et TVA</h2>
       <div className="grid gap-3 sm:grid-cols-4">
         <Field label="Devise" className="sm:col-span-2">
           <Select
@@ -196,7 +196,7 @@ function ShopSettings() {
         </Field>
       </div>
 
-      <h2 className="font-semibold text-slate-900">Codes produit et tickets</h2>
+      <h2 className="font-semibold text-ink">Codes produit et tickets</h2>
       <div className="grid gap-3 sm:grid-cols-4">
         <Field label="Prefixe des codes internes" hint="Exemple : CAV.">
           <Input value={form.internal_code_prefix ?? ''} onChange={(e) => set('internal_code_prefix', e.target.value)} />
@@ -276,10 +276,10 @@ function UsersTab() {
         ) : (
           <Table head={['Utilisateur', 'Role', 'Statut', 'Cree le', '']}>
             {rows.map((p) => (
-              <tr key={p.id} className="hover:bg-slate-50">
+              <tr key={p.id} className="hover:bg-raised">
                 <td className="td">
-                  <p className="font-medium text-slate-900">{p.full_name || p.email}</p>
-                  <p className="text-xs text-slate-500">{p.email}</p>
+                  <p className="font-medium text-ink">{p.full_name || p.email}</p>
+                  <p className="text-xs text-ink-3">{p.email}</p>
                 </td>
                 <td className="td">
                   <Select
@@ -298,7 +298,7 @@ function UsersTab() {
                     ? <Badge color="green">actif</Badge>
                     : <Badge color="amber">en attente d activation</Badge>}
                 </td>
-                <td className="td text-xs text-slate-500">{formatDateTime(p.created_at)}</td>
+                <td className="td text-xs text-ink-3">{formatDateTime(p.created_at)}</td>
                 <td className="td">
                   {p.id !== me?.id && (
                     <Button
@@ -391,10 +391,10 @@ function LocationsTab() {
         {loading ? <Spinner /> : (
           <Table head={['Code', 'Nom', 'Type', 'Point de vente', 'Statut', '']}>
             {rows.map((l) => (
-              <tr key={l.id} className="hover:bg-slate-50">
+              <tr key={l.id} className="hover:bg-raised">
                 <td className="td font-mono font-semibold">{l.code}</td>
                 <td className="td">{l.name}</td>
-                <td className="td text-sm text-slate-600">{l.kind}</td>
+                <td className="td text-sm text-ink-2">{l.kind}</td>
                 <td className="td">{l.is_sales_point && <Badge color="wine">caisse</Badge>}</td>
                 <td className="td">{l.active ? <Badge color="green">actif</Badge> : <Badge color="slate">inactif</Badge>}</td>
                 <td className="td">
@@ -515,8 +515,8 @@ function CategoriesTab() {
         {loading ? <Spinner /> : (
           <Table head={['Ordre', 'Code', 'Libelle', 'Statut', '']}>
             {rows.map((c) => (
-              <tr key={c.id} className="hover:bg-slate-50">
-                <td className="td tabular text-slate-500">{c.sort_order}</td>
+              <tr key={c.id} className="hover:bg-raised">
+                <td className="td tabular text-ink-3">{c.sort_order}</td>
                 <td className="td font-mono text-xs">{c.code}</td>
                 <td className="td font-medium">{c.label}</td>
                 <td className="td">{c.active ? <Badge color="green">active</Badge> : <Badge color="slate">inactive</Badge>}</td>
@@ -611,8 +611,8 @@ function AuditTab() {
         ) : (
           <Table head={['Date', 'Operation', 'Utilisateur', 'Detail']}>
             {rows.map((a) => (
-              <tr key={a.id} className="hover:bg-slate-50">
-                <td className="td whitespace-nowrap text-xs text-slate-600">{formatDateTime(a.created_at)}</td>
+              <tr key={a.id} className="hover:bg-raised">
+                <td className="td whitespace-nowrap text-xs text-ink-2">{formatDateTime(a.created_at)}</td>
                 <td className="td">
                   <Badge color={a.action.startsWith('vente') ? 'red' : a.action.startsWith('caisse') ? 'blue' : 'amber'}>
                     {AUDIT_LABELS[a.action] ?? a.action}
@@ -620,7 +620,7 @@ function AuditTab() {
                 </td>
                 <td className="td text-xs">{a.user_email}</td>
                 <td className="td">
-                  <code className="block max-w-xl overflow-x-auto whitespace-pre-wrap break-words text-xs text-slate-600">
+                  <code className="block max-w-xl overflow-x-auto whitespace-pre-wrap break-words text-xs text-ink-2">
                     {JSON.stringify(a.details, null, 1)}
                   </code>
                 </td>

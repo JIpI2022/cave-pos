@@ -3,15 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0" />
-    <meta name="theme-color" content="#7a1c3b" />
+    <meta name="theme-color" content="#8a4f15" />
     <meta name="description" content="Gestion de cave / depot et caisse (point de vente)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Cave" />
     <link rel="icon" type="image/png" href="icons/icon-192.png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <title>Cave &amp; Caisse</title>
+    <script>
+      /*
+        Theme applique avant le premier affichage : sans cela, un appareil
+        regle en sombre verrait un eclair blanc le temps que React demarre.
+        Meme logique que src/hooks/useTheme.tsx, volontairement dupliquee ici
+        car ce script doit s'executer avant tout telechargement de module.
+      */
+      (function () {
+        try {
+          var choix = localStorage.getItem('cave-pos-theme')
+          var sombre = choix === 'sombre'
+            || (choix !== 'clair' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (sombre) {
+            document.documentElement.classList.add('dark')
+            document.documentElement.style.colorScheme = 'dark'
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#1c1917')
+          }
+        } catch (e) { /* stockage indisponible : on reste en clair */ }
+      })()
+    </script>
   </head>
-  <body class="bg-slate-100">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

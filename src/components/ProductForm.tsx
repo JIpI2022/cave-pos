@@ -282,7 +282,7 @@ export default function ProductForm({
         </div>
 
         {/* --- Prix et marge --- */}
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="rounded-lg border border-line bg-raised p-3">
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Prix d achat HT" required>
               <Input value={form.purchase_price_ht} onChange={(e) => set('purchase_price_ht', e.target.value)}
@@ -297,13 +297,13 @@ export default function ProductForm({
             </Field>
           </div>
           <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <span className="text-slate-600">Vente HT : <b className="tabular">{formatMoney(marge.venteHt, currencyOf(settings))}</b></span>
-            <span className="text-slate-600">
+            <span className="text-ink-2">Vente HT : <b className="tabular">{formatMoney(marge.venteHt, currencyOf(settings))}</b></span>
+            <span className="text-ink-2">
               Marge brute : <b className={`tabular ${marge.margeHt < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
                 {formatMoney(marge.margeHt, currencyOf(settings))}
               </b>
             </span>
-            <span className="text-slate-600">Taux de marge : <b className="tabular">{formatPercent(marge.taux, 1)}</b></span>
+            <span className="text-ink-2">Taux de marge : <b className="tabular">{formatPercent(marge.taux, 1)}</b></span>
           </div>
         </div>
 
@@ -358,7 +358,7 @@ export default function ProductForm({
           {form.photo_url && (
             <img
               src={form.photo_url} alt=""
-              className="h-28 w-28 rounded-lg border border-slate-200 object-cover"
+              className="h-28 w-28 rounded-lg border border-line object-cover"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             />
           )}
@@ -374,7 +374,7 @@ export default function ProductForm({
           <Textarea
             readOnly
             rows={2}
-            className="bg-slate-50 text-xs text-slate-500"
+            className="bg-raised text-xs text-ink-3"
             value={`Stock total : ${product.total_stock ?? 0} unite(s) · Valeur au prix d achat : ${
               formatMoney(product.stock_value_ht ?? 0, currencyOf(settings))}`}
           />

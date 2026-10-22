@@ -68,7 +68,7 @@ export default function ScanInput({
     <>
       <div className={`flex items-stretch gap-2 ${className}`}>
         <div className="relative flex-1">
-          <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+          <ScanLine className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-3" />
           <input
             ref={inputRef}
             value={current}

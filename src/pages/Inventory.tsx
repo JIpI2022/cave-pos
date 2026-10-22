@@ -71,10 +71,10 @@ export default function Inventory() {
         ) : (
           <Table head={['Session', 'Emplacement', 'Ouverte le', 'Statut', '']}>
             {sessions.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
+              <tr key={s.id} className="hover:bg-raised">
                 <td className="td font-medium">{s.label || `Inventaire ${formatDateTime(s.started_at)}`}</td>
                 <td className="td text-sm">{locations.find((l) => l.id === s.location_id)?.name ?? '—'}</td>
-                <td className="td text-xs text-slate-600">{formatDateTime(s.started_at)}</td>
+                <td className="td text-xs text-ink-2">{formatDateTime(s.started_at)}</td>
                 <td className="td">
                   {s.status === 'ouverte' ? <Badge color="amber">en cours</Badge>
                     : s.status === 'validee' ? <Badge color="green">validee</Badge>
@@ -309,7 +309,7 @@ function InventorySessionView({ session, onBack }: { session: InventorySession; 
             keepFocus
             placeholder="Scanner un article (chaque scan ajoute 1) ou chercher par nom..."
           />
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
             <Button variant="secondary" icon={ScanLine} onClick={() => setCameraOpen(true)}>
               Scan continu (camera)
             </Button>
@@ -320,19 +320,19 @@ function InventorySessionView({ session, onBack }: { session: InventorySession; 
 
       <div className="mb-3 grid gap-3 sm:grid-cols-4">
         <div className="card p-3 text-center">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Lignes comptees</p>
+          <p className="text-xs uppercase tracking-wide text-ink-3">Lignes comptees</p>
           <p className="tabular text-xl font-bold">{stats.comptees}</p>
         </div>
         <div className="card p-3 text-center">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Ecarts</p>
+          <p className="text-xs uppercase tracking-wide text-ink-3">Ecarts</p>
           <p className="tabular text-xl font-bold text-amber-700">{stats.ecarts}</p>
         </div>
         <div className="card p-3 text-center">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Manquants / excedents</p>
+          <p className="text-xs uppercase tracking-wide text-ink-3">Manquants / excedents</p>
           <p className="tabular text-xl font-bold">{stats.manquants} / {stats.excedents}</p>
         </div>
         <div className="card p-3 text-center">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Valeur des ecarts</p>
+          <p className="text-xs uppercase tracking-wide text-ink-3">Valeur des ecarts</p>
           <p className={`tabular text-xl font-bold ${stats.valeur < 0 ? 'text-red-600' : 'text-emerald-700'}`}>
             {formatMoney(stats.valeur, currency)}
           </p>
@@ -349,10 +349,10 @@ function InventorySessionView({ session, onBack }: { session: InventorySession; 
               return (
                 <tr key={l.id} className={gap !== 0 ? 'bg-amber-50/40' : ''}>
                   <td className="td">
-                    <p className="font-medium text-slate-900">{l.product_name}</p>
-                    <p className="font-mono text-xs text-slate-500">{l.barcode || l.internal_code}</p>
+                    <p className="font-medium text-ink">{l.product_name}</p>
+                    <p className="font-mono text-xs text-ink-3">{l.barcode || l.internal_code}</p>
                   </td>
-                  <td className="td tabular text-slate-500">{formatQty(l.theoretical_qty)}</td>
+                  <td className="td tabular text-ink-3">{formatQty(l.theoretical_qty)}</td>
                   <td className="td">
                     {readOnly ? (
                       <span className="tabular font-semibold">{formatQty(l.counted_qty)}</span>
@@ -365,13 +365,13 @@ function InventorySessionView({ session, onBack }: { session: InventorySession; 
                       />
                     )}
                   </td>
-                  <td className={`td tabular font-semibold ${gap < 0 ? 'text-red-600' : gap > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
+                  <td className={`td tabular font-semibold ${gap < 0 ? 'text-red-600' : gap > 0 ? 'text-emerald-700' : 'text-ink-3'}`}>
                     {gap > 0 ? '+' : ''}{formatQty(gap)}
                   </td>
-                  <td className="td tabular text-xs text-slate-600">{formatMoney(l.gap_value_ht, currency)}</td>
+                  <td className="td tabular text-xs text-ink-2">{formatMoney(l.gap_value_ht, currency)}</td>
                   <td className="td">
                     {readOnly ? (
-                      <span className="text-xs text-slate-600">{l.reason}</span>
+                      <span className="text-xs text-ink-2">{l.reason}</span>
                     ) : (
                       <Input
                         value={l.reason ?? ''}
@@ -384,7 +384,7 @@ function InventorySessionView({ session, onBack }: { session: InventorySession; 
                     {!readOnly && (
                       <button
                         onClick={() => void removeLine(l)}
-                        className="text-slate-400 hover:text-red-600"
+                        className="text-ink-3 hover:text-red-600"
                         aria-label="Retirer la ligne"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -435,7 +435,7 @@ function InventorySessionView({ session, onBack }: { session: InventorySession; 
             </Alert>
           )}
           <Textarea
-            readOnly rows={3} className="bg-slate-50 text-xs"
+            readOnly rows={3} className="bg-raised text-xs"
             value={lines.filter((l) => Number(l.gap) !== 0)
               .map((l) => `${l.product_name} : ${Number(l.gap) > 0 ? '+' : ''}${l.gap}`)
               .join('\n') || 'Aucun ecart.'}

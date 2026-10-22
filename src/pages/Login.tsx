@@ -1,7 +1,9 @@
 /** Ecran de connexion / creation de compte. */
 
 import { useState } from 'react'
-import { Activity, Grape, LogIn, UserPlus } from 'lucide-react'
+import { Activity, LogIn, UserPlus } from 'lucide-react'
+import { Logo } from '@/components/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Alert, Button, Field, Input } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { supabaseHost, testerConnexion } from '@/lib/supabase'
@@ -51,18 +53,30 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-wine-950 to-slate-900 px-4 py-10">
-      <div className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-stone-950 px-4 py-10">
+      {/*
+        Decor : deux halos, ambre (la boisson) et vert bouteille. Purement
+        decoratif, donc masque aux lecteurs d'ecran, et sans interception du
+        clic pour ne pas gener la saisie.
+      */}
+      <div aria-hidden className="pointer-events-none absolute -left-28 -top-24 h-80 w-80 rounded-full bg-ambre-600/25 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-bouteille-600/25 blur-3xl" />
+
+      <div className="absolute right-3 top-3 text-stone-300">
+        <ThemeToggle />
+      </div>
+
+      <div className="relative w-full max-w-md">
         <div className="mb-6 text-center text-white">
-          <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-wine-700 shadow-lg">
-            <Grape className="h-7 w-7" />
+          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-ambre-400 to-ambre-600 text-stone-950 shadow-lg shadow-ambre-950/50 ring-1 ring-ambre-300/30">
+            <Logo className="h-9 w-9" />
           </div>
-          <h1 className="text-2xl font-bold">Cave &amp; Caisse</h1>
-          <p className="text-sm text-slate-300">Gestion de cave, de depot et point de vente</p>
+          <h1 className="text-2xl font-bold tracking-tight">Cave &amp; Caisse</h1>
+          <p className="mt-1 text-sm text-stone-400">Gestion de cave, de depot et point de vente</p>
         </div>
 
-        <form onSubmit={submit} className="card space-y-4 p-5">
-          <h2 className="text-lg font-semibold text-slate-900">
+        <form onSubmit={submit} className="card space-y-4 p-5 shadow-2xl shadow-stone-950/40">
+          <h2 className="text-lg font-semibold text-ink">
             {mode === 'connexion' ? 'Connexion' : mode === 'inscription' ? 'Creer un compte' : 'Mot de passe oublie'}
           </h2>
 
@@ -72,7 +86,7 @@ export default function Login() {
 
           {/* Diagnostic propose des qu'une panne de connexion est detectee */}
           {(connectionError || /injoignable/i.test(error ?? '')) && (
-            <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="space-y-2 rounded-lg border border-line bg-raised p-3">
               <Button
                 type="button" variant="secondary" icon={Activity} className="w-full"
                 loading={diagnosticEnCours}
@@ -91,7 +105,7 @@ export default function Login() {
 
               <button
                 type="button"
-                className="w-full text-xs text-slate-500 underline"
+                className="w-full text-xs text-ink-3 underline"
                 onClick={() => {
                   // Repli en cas de session locale abimee
                   try { localStorage.removeItem('cave-pos-auth') } catch { /* stockage indisponible */ }
@@ -135,15 +149,15 @@ export default function Login() {
 
           <div className="flex flex-wrap justify-between gap-2 text-sm">
             {mode !== 'connexion' ? (
-              <button type="button" className="text-wine-700 hover:underline" onClick={() => setMode('connexion')}>
+              <button type="button" className="text-brand hover:underline" onClick={() => setMode('connexion')}>
                 Retour a la connexion
               </button>
             ) : (
               <>
-                <button type="button" className="text-wine-700 hover:underline" onClick={() => setMode('inscription')}>
+                <button type="button" className="text-brand hover:underline" onClick={() => setMode('inscription')}>
                   Creer un compte
                 </button>
-                <button type="button" className="text-slate-500 hover:underline" onClick={() => setMode('oubli')}>
+                <button type="button" className="text-ink-3 hover:underline" onClick={() => setMode('oubli')}>
                   Mot de passe oublie ?
                 </button>
               </>
@@ -151,10 +165,10 @@ export default function Login() {
           </div>
         </form>
 
-        <p className="mt-4 text-center text-xs text-slate-400">
+        <p className="mt-4 text-center text-xs text-stone-400">
           Le premier compte cree devient automatiquement administrateur.
         </p>
-        <p className="mt-1 text-center text-[11px] text-slate-500">
+        <p className="mt-1 text-center text-[11px] text-stone-500">
           Serveur : <span className="font-mono">{supabaseHost}</span>
           {' · '}
           Version du {formatDateTime(__DATE_COMPILATION__)}

@@ -61,7 +61,7 @@ export default function TicketDialog({
         )}
 
         {/* Apercu fidele au ticket papier */}
-        <div className="mx-auto w-full max-w-[320px] rounded-lg border border-dashed border-slate-300 bg-white p-4 font-mono text-[11px] leading-relaxed text-slate-800">
+        <div className="mx-auto w-full max-w-[320px] rounded-lg border border-dashed border-line bg-card p-4 font-mono text-[11px] leading-relaxed text-ink">
           <p className="text-center text-sm font-bold">{settings?.company_name}</p>
           {settings?.address && <p className="text-center">{settings.address}</p>}
           {settings?.phone && <p className="text-center">Tel. {settings.phone}</p>}
@@ -82,7 +82,7 @@ export default function TicketDialog({
                 <span>{formatMoney(it.line_ttc, currency)}</span>
               </div>
               {it.line_discount > 0 && (
-                <div className="flex justify-between text-slate-500">
+                <div className="flex justify-between text-ink-3">
                   <span>dont remise</span><span>- {formatMoney(it.line_discount, currency)}</span>
                 </div>
               )}
@@ -98,14 +98,14 @@ export default function TicketDialog({
           <div className="flex justify-between text-base font-bold">
             <span>TOTAL</span><span>{formatMoney(data.sale.total_ttc, currency)}</span>
           </div>
-          <div className="flex justify-between text-slate-600">
+          <div className="flex justify-between text-ink-2">
             <span>Total HT</span><span>{formatMoney(data.sale.total_ht, currency)}</span>
           </div>
-          <div className="flex justify-between text-slate-600">
+          <div className="flex justify-between text-ink-2">
             <span>Total TVA</span><span>{formatMoney(data.sale.total_vat, currency)}</span>
           </div>
           {data.vatBreakdown?.map((b) => (
-            <div key={b.rate} className="flex justify-between text-slate-500">
+            <div key={b.rate} className="flex justify-between text-ink-3">
               <span>TVA {formatQty(b.rate)} % sur {formatMoney(b.base, currency)}</span>
               <span>{formatMoney(b.vat, currency)}</span>
             </div>
@@ -120,7 +120,7 @@ export default function TicketDialog({
               </div>
               {p.tendered ? (
                 <>
-                  <div className="flex justify-between text-slate-500">
+                  <div className="flex justify-between text-ink-3">
                     <span>Remis</span><span>{formatMoney(p.tendered, currency)}</span>
                   </div>
                   <div className="flex justify-between font-bold">
@@ -139,7 +139,7 @@ export default function TicketDialog({
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-ink-3">
           Apercu — le PDF genere respecte la largeur 80 mm des imprimantes thermiques.
         </p>
       </div>

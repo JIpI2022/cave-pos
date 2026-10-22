@@ -11,6 +11,7 @@ import { Suspense, lazy } from 'react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { hasSupabaseConfig } from '@/lib/supabase'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
+import { ThemeProvider } from '@/hooks/useTheme'
 import { SettingsProvider } from '@/hooks/useSettings'
 import { SyncProvider } from '@/hooks/useSyncQueue'
 import { ToastProvider } from '@/hooks/useToast'
@@ -41,15 +42,17 @@ export default function App() {
 
   return (
     <HashRouter>
-      <ToastProvider>
-        <AuthProvider>
-          <SettingsProvider>
-            <SyncProvider>
-              <AppRoutes />
-            </SyncProvider>
-          </SettingsProvider>
-        </AuthProvider>
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <SettingsProvider>
+              <SyncProvider>
+                <AppRoutes />
+              </SyncProvider>
+            </SettingsProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </HashRouter>
   )
 }

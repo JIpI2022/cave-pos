@@ -43,12 +43,12 @@ export function Field({
     <div className={className}>
       {label && (
         <label className="label">
-          {label} {required && <span className="text-wine-700">*</span>}
+          {label} {required && <span className="text-brand">*</span>}
         </label>
       )}
       {children}
-      {hint && !error && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
-      {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
+      {hint && !error && <p className="mt-1 text-xs text-ink-3">{hint}</p>}
+      {error && <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
     </div>
   )
 }
@@ -70,11 +70,11 @@ export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
 
 export function Checkbox({ label, ...rest }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-700">
+    <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-ink-2">
       <input
         type="checkbox"
         {...rest}
-        className="h-4 w-4 rounded border-slate-300 text-wine-700 focus:ring-wine-300"
+        className="h-4 w-4 rounded border-line text-brand focus:ring-brand/40"
       />
       {label}
     </label>
@@ -110,20 +110,20 @@ export function Modal({
   const width = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' }[size]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-slate-900/50 p-0 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-stone-950/60 p-0 sm:items-center sm:p-4">
       <div
         ref={ref}
-        className={`w-full ${width} max-h-[95vh] overflow-y-auto rounded-t-2xl bg-white shadow-xl sm:rounded-2xl`}
+        className={`w-full ${width} max-h-[95vh] overflow-y-auto rounded-t-2xl bg-card shadow-xl sm:rounded-2xl`}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" aria-label="Fermer">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-card px-4 py-3">
+          <h2 className="text-lg font-semibold text-ink">{title}</h2>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-ink-3 hover:bg-raised hover:text-ink-2" aria-label="Fermer">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="px-4 py-4">{children}</div>
         {footer && (
-          <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-line bg-raised px-4 py-3">
             {footer}
           </div>
         )}
@@ -134,11 +134,12 @@ export function Modal({
 
 // ---------------------------------------------------------------- Messages
 export function Alert({ kind = 'info', children }: { kind?: 'info' | 'success' | 'warning' | 'error'; children: ReactNode }) {
+  // Les variantes sombres gardent >= 4,5:1 sur le fond de carte sombre.
   const style = {
-    info: 'bg-sky-50 text-sky-800 border-sky-200',
-    success: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    warning: 'bg-amber-50 text-amber-900 border-amber-200',
-    error: 'bg-red-50 text-red-800 border-red-200',
+    info: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900 dark:bg-sky-950/60 dark:text-sky-200',
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200',
+    warning: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-200',
+    error: 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200',
   }[kind]
   const Icon = { info: Info, success: CheckCircle2, warning: AlertTriangle, error: XCircle }[kind]
   return (
@@ -151,19 +152,19 @@ export function Alert({ kind = 'info', children }: { kind?: 'info' | 'success' |
 
 export function Badge({ color = 'slate', children }: { color?: string; children: ReactNode }) {
   const map: Record<string, string> = {
-    slate: 'bg-slate-100 text-slate-700',
-    green: 'bg-emerald-100 text-emerald-800',
-    red: 'bg-red-100 text-red-800',
-    amber: 'bg-amber-100 text-amber-900',
-    blue: 'bg-sky-100 text-sky-800',
-    wine: 'bg-wine-100 text-wine-800',
+    slate: 'bg-raised text-ink-2',
+    green: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200',
+    red: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200',
+    amber: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
+    blue: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200',
+    wine: 'bg-brand-soft text-brand-soft-ink',
   }
   return <span className={`badge ${map[color] ?? map.slate}`}>{children}</span>
 }
 
 export function Spinner({ label }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-10 text-slate-500">
+    <div className="flex items-center justify-center gap-2 py-10 text-ink-3">
       <Loader2 className="h-5 w-5 animate-spin" />
       {label ?? 'Chargement...'}
     </div>
@@ -173,8 +174,8 @@ export function Spinner({ label }: { label?: string }) {
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
-      <p className="font-semibold text-slate-700">{title}</p>
-      {description && <p className="max-w-md text-sm text-slate-500">{description}</p>}
+      <p className="font-semibold text-ink-2">{title}</p>
+      {description && <p className="max-w-md text-sm text-ink-3">{description}</p>}
       {action}
     </div>
   )
@@ -184,15 +185,15 @@ export function EmptyState({ title, description, action }: { title: string; desc
 export function Table({ head, children, className = '' }: { head: ReactNode[]; children: ReactNode; className?: string }) {
   return (
     <div className={`overflow-x-auto ${className}`}>
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50">
+      <table className="min-w-full divide-y divide-line text-sm">
+        <thead className="bg-raised">
           <tr>
             {head.map((h, i) => (
               <Fragment key={i}>{typeof h === 'string' ? <th className="th">{h}</th> : h}</Fragment>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">{children}</tbody>
+        <tbody className="divide-y divide-line bg-card">{children}</tbody>
       </table>
     </div>
   )
@@ -209,11 +210,11 @@ export function StatCard({
   tone?: 'wine' | 'green' | 'blue' | 'amber' | 'slate'
 }) {
   const tones: Record<string, string> = {
-    wine: 'bg-wine-50 text-wine-700',
-    green: 'bg-emerald-50 text-emerald-700',
-    blue: 'bg-sky-50 text-sky-700',
-    amber: 'bg-amber-50 text-amber-700',
-    slate: 'bg-slate-100 text-slate-600',
+    wine: 'bg-brand-soft text-brand-soft-ink',
+    green: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300',
+    blue: 'bg-sky-50 text-sky-700 dark:bg-sky-950/70 dark:text-sky-300',
+    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300',
+    slate: 'bg-raised text-ink-2',
   }
   return (
     <div className="card flex items-center gap-3 p-4">
@@ -223,9 +224,9 @@ export function StatCard({
         </div>
       )}
       <div className="min-w-0">
-        <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-        <p className="tabular truncate text-xl font-bold text-slate-900">{value}</p>
-        {sub && <p className="truncate text-xs text-slate-500">{sub}</p>}
+        <p className="truncate text-xs font-medium uppercase tracking-wide text-ink-3">{label}</p>
+        <p className="tabular truncate text-xl font-bold text-ink">{value}</p>
+        {sub && <p className="truncate text-xs text-ink-3">{sub}</p>}
       </div>
     </div>
   )
@@ -236,8 +237,8 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+        <h1 className="text-xl font-bold text-ink sm:text-2xl">{title}</h1>
+        {subtitle && <p className="text-sm text-ink-3">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -273,7 +274,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <div className="space-y-3 text-sm text-slate-700">
+      <div className="space-y-3 text-sm text-ink-2">
         <div>{message}</div>
         {children}
       </div>

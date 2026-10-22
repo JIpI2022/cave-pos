@@ -137,7 +137,7 @@ export default function Stock() {
           </Select>
           <Checkbox label="Sous le seuil" checked={onlyLow} onChange={(e) => setOnlyLow(e.target.checked)} />
           <Checkbox label="Masquer les stocks a zero" checked={hideZero} onChange={(e) => setHideZero(e.target.checked)} />
-          <span className="ml-auto text-sm text-slate-500">{filtered.length} ligne(s)</span>
+          <span className="ml-auto text-sm text-ink-3">{filtered.length} ligne(s)</span>
         </div>
       </div>
 
@@ -150,17 +150,17 @@ export default function Stock() {
               const low = Number(r.quantity) <= Number(r.stock_alert_threshold)
               const negative = Number(r.quantity) < 0
               return (
-                <tr key={`${r.product_id}-${r.location_id}`} className="hover:bg-slate-50">
+                <tr key={`${r.product_id}-${r.location_id}`} className="hover:bg-raised">
                   <td className="td">
-                    <p className="font-medium text-slate-900">{r.product_name}</p>
-                    <p className="font-mono text-xs text-slate-500">{r.barcode || r.internal_code}</p>
+                    <p className="font-medium text-ink">{r.product_name}</p>
+                    <p className="font-mono text-xs text-ink-3">{r.barcode || r.internal_code}</p>
                   </td>
                   <td className="td text-sm">{r.location_name}</td>
                   <td className={`td tabular font-semibold ${negative ? 'text-red-600' : low ? 'text-amber-700' : ''}`}>
                     {formatQty(r.quantity)}
                     {negative && <Badge color="red">negatif</Badge>}
                   </td>
-                  <td className="td tabular text-xs text-slate-500">{formatQty(r.stock_alert_threshold)}</td>
+                  <td className="td tabular text-xs text-ink-3">{formatQty(r.stock_alert_threshold)}</td>
                   <td className="td tabular whitespace-nowrap">{formatMoney(r.value_ht, currency)}</td>
                   <td className="td">
                     <div className="flex gap-1">

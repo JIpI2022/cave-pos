@@ -240,7 +240,7 @@ export function CloseCashDialog({
         {error && <Alert kind="error">{error}</Alert>}
 
         {current && (
-          <div className="grid gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
+          <div className="grid gap-2 rounded-lg bg-raised p-3 text-sm sm:grid-cols-2">
             <Line label="Tickets" value={String(current.nb_tickets)} />
             <Line label="CA TTC" value={formatMoney(current.ca_ttc, currency)} strong />
             <Line label="Especes encaissees" value={formatMoney(current.total_especes, currency)} />
@@ -263,7 +263,7 @@ export function CloseCashDialog({
           <>
             <div>
               <p className="label">Comptage des especes</p>
-              <div className="max-h-64 overflow-auto rounded-lg border border-slate-200">
+              <div className="max-h-64 overflow-auto rounded-lg border border-line">
                 <Table head={['Coupure', 'Nombre', 'Total']}>
                   {denominations.map((d) => {
                     const qty = parseSafe(counts[String(d)] ?? '')
@@ -277,7 +277,7 @@ export function CloseCashDialog({
                             className="w-24 text-right"
                           />
                         </td>
-                        <td className="td tabular text-slate-600">
+                        <td className="td tabular text-ink-2">
                           {qty > 0 ? formatMoney(d * qty, currency) : '—'}
                         </td>
                       </tr>
@@ -299,12 +299,12 @@ export function CloseCashDialog({
             </Field>
 
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="rounded-lg bg-slate-100 p-3 text-center">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Theorique</p>
+              <div className="rounded-lg bg-raised p-3 text-center">
+                <p className="text-xs uppercase tracking-wide text-ink-3">Theorique</p>
                 <p className="tabular text-lg font-bold">{formatMoney(expected ?? 0, currency)}</p>
               </div>
-              <div className="rounded-lg bg-slate-100 p-3 text-center">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Compte</p>
+              <div className="rounded-lg bg-raised p-3 text-center">
+                <p className="text-xs uppercase tracking-wide text-ink-3">Compte</p>
                 <p className="tabular text-lg font-bold">{formatMoney(counted, currency)}</p>
               </div>
               <div className={`rounded-lg p-3 text-center ${
@@ -322,17 +322,17 @@ export function CloseCashDialog({
         )}
 
         {closed && (
-          <div className="grid gap-2 rounded-lg bg-slate-900 p-4 text-white sm:grid-cols-3">
+          <div className="grid gap-2 rounded-lg bg-strong p-4 text-strong-ink sm:grid-cols-3">
             <div className="text-center">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Theorique</p>
+              <p className="text-xs uppercase tracking-wide text-ink-3">Theorique</p>
               <p className="tabular text-xl font-bold">{formatMoney(closed.expected_cash ?? 0, currency)}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Compte</p>
+              <p className="text-xs uppercase tracking-wide text-ink-3">Compte</p>
               <p className="tabular text-xl font-bold">{formatMoney(closed.counted_cash ?? 0, currency)}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Ecart</p>
+              <p className="text-xs uppercase tracking-wide text-ink-3">Ecart</p>
               <p className={`tabular text-xl font-bold ${
                 (closed.cash_gap ?? 0) === 0 ? 'text-emerald-400' : 'text-amber-300'}`}>
                 {formatMoney(closed.cash_gap ?? 0, currency)}
@@ -348,8 +348,8 @@ export function CloseCashDialog({
 function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
-      <span className="text-slate-500">{label}</span>
-      <span className={`tabular ${strong ? 'text-base font-bold text-slate-900' : 'font-medium'}`}>{value}</span>
+      <span className="text-ink-3">{label}</span>
+      <span className={`tabular ${strong ? 'text-base font-bold text-ink' : 'font-medium'}`}>{value}</span>
     </div>
   )
 }

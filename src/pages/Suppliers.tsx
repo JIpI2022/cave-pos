@@ -76,8 +76,8 @@ export default function Suppliers() {
         ) : (
           <Table head={['Nom', 'Contact', 'Telephone', 'E-mail', 'Statut', '']}>
             {filtered.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
-                <td className="td font-medium text-slate-900">{s.name}</td>
+              <tr key={s.id} className="hover:bg-raised">
+                <td className="td font-medium text-ink">{s.name}</td>
                 <td className="td text-sm">{s.contact || '—'}</td>
                 <td className="td text-sm">{s.phone || '—'}</td>
                 <td className="td text-sm">{s.email || '—'}</td>

@@ -136,12 +136,12 @@ export default function BarcodeScanner({
         {error ? (
           <Alert kind="error">{error}</Alert>
         ) : (
-          <p className="flex items-center gap-2 text-sm text-slate-500">
+          <p className="flex items-center gap-2 text-sm text-ink-3">
             <Camera className="h-4 w-4" /> Presentez le code-barres devant l objectif.
           </p>
         )}
 
-        <div id={ELEMENT_ID} className="overflow-hidden rounded-lg bg-slate-900" />
+        <div id={ELEMENT_ID} className="overflow-hidden rounded-lg bg-stone-950" />
 
         {continuous && lastCode && (
           <Alert kind="success">Dernier code lu : <span className="font-mono">{lastCode}</span></Alert>

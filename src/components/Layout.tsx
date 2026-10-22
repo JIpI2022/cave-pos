@@ -7,10 +7,12 @@
 import { useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import {
-  ArrowLeftRight, BarChart3, Boxes, ClipboardList, Grape, LayoutDashboard, LogOut,
+  ArrowLeftRight, BarChart3, Boxes, ClipboardList, LayoutDashboard, LogOut,
   Menu, Package, Receipt, RefreshCw, Settings as SettingsIcon, ShoppingCart, Truck,
   Users, Vault, WifiOff, X,
 } from 'lucide-react'
+import { Logo } from '@/components/Logo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
 import { useSettings } from '@/hooks/useSettings'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
@@ -67,14 +69,15 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen lg:flex">
       {/* ---------------- Navigation laterale (ordinateur) ---------------- */}
-      <aside className="hidden w-60 shrink-0 flex-col bg-slate-900 text-slate-200 lg:flex">
-        <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-4">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-wine-700 text-white">
-            <Grape className="h-5 w-5" />
+      <aside className="hidden w-60 shrink-0 flex-col bg-stone-900 text-stone-200 lg:flex">
+        <div className="flex items-center gap-2 border-b border-stone-800 px-4 py-4">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand text-brand-ink">
+            <Logo className="h-[22px] w-[22px]" />
           </div>
           <div className="min-w-0">
             <p className="truncate font-semibold text-white">{settings?.company_name ?? 'Cave & Caisse'}</p>
-            <p className="text-xs text-slate-400">{ROLE_LABELS[role ?? ''] ?? ''}</p>
+            {/* La barre laterale reste sombre dans les deux themes : teintes fixes */}
+            <p className="text-xs text-stone-400">{ROLE_LABELS[role ?? ''] ?? ''}</p>
           </div>
         </div>
 
@@ -84,32 +87,38 @@ export default function Layout({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="border-t border-slate-800 px-3 py-3 text-xs">
-          <p className="truncate text-slate-300">{profile?.full_name || profile?.email}</p>
-          <button onClick={() => void signOut()} className="mt-2 flex items-center gap-2 text-slate-400 hover:text-white">
-            <LogOut className="h-4 w-4" /> Se deconnecter
-          </button>
+        <div className="border-t border-stone-800 px-3 py-3 text-xs">
+          <p className="truncate text-stone-300">{profile?.full_name || profile?.email}</p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <button onClick={() => void signOut()} className="flex items-center gap-2 text-stone-400 hover:text-white">
+              <LogOut className="h-4 w-4" /> Se deconnecter
+            </button>
+            <ThemeToggle className="-mr-1 text-stone-300" />
+          </div>
         </div>
       </aside>
 
       {/* ---------------- Contenu ---------------- */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Barre superieure mobile */}
-        <header className="safe-top sticky top-0 z-30 flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2 lg:hidden">
+        <header className="safe-top sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-card px-3 py-2 lg:hidden">
           <button onClick={() => setMenuOpen(true)} className="btn-ghost p-2" aria-label="Ouvrir le menu">
             <Menu className="h-5 w-5" />
           </button>
           <Link to="/caisse" className="flex min-w-0 flex-1 items-center gap-2">
-            <Grape className="h-5 w-5 shrink-0 text-wine-700" />
-            <span className="truncate font-semibold text-slate-900">{settings?.company_name ?? 'Cave & Caisse'}</span>
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand text-brand-ink">
+              <Logo className="h-[18px] w-[18px]" />
+            </span>
+            <span className="truncate font-semibold text-ink">{settings?.company_name ?? 'Cave & Caisse'}</span>
           </Link>
+          <ThemeToggle className="text-ink-2" />
           <StatusPill online={online} pendingCount={pendingCount} syncing={syncing} onSync={() => void syncNow()} />
         </header>
 
         {/* Bandeau hors ligne / file d'attente */}
         {(!online || pendingCount > 0) && (
           <div className={`flex items-center justify-between gap-2 px-3 py-1.5 text-xs font-medium ${
-            online ? 'bg-amber-100 text-amber-900' : 'bg-slate-800 text-white'}`}>
+            online ? 'bg-ambre-100 text-ambre-900' : 'bg-stone-800 text-white'}`}>
             <span className="flex items-center gap-1.5">
               {!online && <WifiOff className="h-3.5 w-3.5" />}
               {!online
@@ -128,14 +137,14 @@ export default function Layout({ children }: { children: ReactNode }) {
         <main className="flex-1 px-3 pb-24 pt-3 sm:px-5 sm:pb-8 sm:pt-5 lg:pb-8">{children}</main>
 
         {/* Barre inferieure mobile */}
-        <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-slate-200 bg-white lg:hidden">
+        <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-card lg:hidden">
           {mobileItems.map((i) => {
             const active = i.to === '/' ? location.pathname === '/' : location.pathname.startsWith(i.to)
             return (
               <NavLink
                 key={i.to} to={i.to}
                 className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${
-                  active ? 'text-wine-700' : 'text-slate-500'}`}
+                  active ? 'text-brand' : 'text-ink-3'}`}
               >
                 <i.icon className="h-5 w-5" />
                 <span className="truncate px-0.5">{i.label}</span>
@@ -148,23 +157,28 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* ---------------- Menu lateral mobile ---------------- */}
       {menuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMenuOpen(false)} />
-          <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-slate-900 text-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-4">
-              <span className="font-semibold text-white">Menu</span>
-              <button onClick={() => setMenuOpen(false)} className="p-1 text-slate-400" aria-label="Fermer le menu">
+          <div className="absolute inset-0 bg-stone-950/60" onClick={() => setMenuOpen(false)} />
+          <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-stone-900 text-stone-200">
+            <div className="flex items-center justify-between border-b border-stone-800 px-4 py-4">
+              <span className="flex items-center gap-2 font-semibold text-white">
+                <Logo className="h-5 w-5 text-ambre-400" /> Menu
+              </span>
+              <button onClick={() => setMenuOpen(false)} className="p-1 text-stone-400 hover:text-white" aria-label="Fermer le menu">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3" onClick={() => setMenuOpen(false)}>
               {items.map((i) => <SideLink key={i.to} item={i} />)}
             </nav>
-            <div className="border-t border-slate-800 px-4 py-3 text-xs">
-              <p className="truncate text-slate-300">{profile?.full_name || profile?.email}</p>
-              <p className="text-slate-500">{ROLE_LABELS[role ?? ''] ?? ''}</p>
-              <button onClick={() => void signOut()} className="mt-2 flex items-center gap-2 text-slate-400">
-                <LogOut className="h-4 w-4" /> Se deconnecter
-              </button>
+            <div className="border-t border-stone-800 px-4 py-3 text-xs">
+              <p className="truncate text-stone-300">{profile?.full_name || profile?.email}</p>
+              <p className="text-stone-400">{ROLE_LABELS[role ?? ''] ?? ''}</p>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <button onClick={() => void signOut()} className="flex items-center gap-2 text-stone-400 hover:text-white">
+                  <LogOut className="h-4 w-4" /> Se deconnecter
+                </button>
+                <ThemeToggle className="-mr-1 text-stone-300" />
+              </div>
             </div>
           </div>
         </div>
@@ -180,7 +194,9 @@ function SideLink({ item }: { item: NavItem }) {
       end={item.to === '/'}
       className={({ isActive }) =>
         `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-          isActive ? 'bg-wine-700 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+          isActive
+            ? 'bg-brand text-brand-ink shadow-sm'
+            : 'text-stone-300 hover:bg-stone-800 hover:text-white'
         }`
       }
     >
@@ -197,7 +213,7 @@ function StatusPill({
   return (
     <button
       onClick={onSync}
-      className={`badge ${online ? 'bg-amber-100 text-amber-900' : 'bg-slate-800 text-white'}`}
+      className={`badge ${online ? 'bg-ambre-100 text-ambre-900' : 'bg-stone-800 text-white'}`}
     >
       {online
         ? <><RefreshCw className={`h-3 w-3 ${syncing ? 'animate-spin' : ''}`} /> {pendingCount}</>

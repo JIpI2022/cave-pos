@@ -5,15 +5,15 @@ import { TriangleAlert } from 'lucide-react'
 
 export default function ConfigMissing() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-900 px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-stone-950 px-4 py-10">
       <div className="card w-full max-w-2xl space-y-4 p-6">
         <div className="flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-lg bg-amber-100 text-amber-700">
             <TriangleAlert className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900">Configuration Supabase manquante</h1>
-            <p className="text-sm text-slate-500">L application ne sait pas a quelle base se connecter.</p>
+            <h1 className="text-lg font-bold text-ink">Configuration Supabase manquante</h1>
+            <p className="text-sm text-ink-3">L application ne sait pas a quelle base se connecter.</p>
           </div>
         </div>
 
@@ -22,7 +22,7 @@ export default function ConfigMissing() {
           fournies au moment de la compilation.
         </Alert>
 
-        <div className="space-y-3 text-sm text-slate-700">
+        <div className="space-y-3 text-sm text-ink-2">
           <p className="font-semibold">En developpement local</p>
           <ol className="list-decimal space-y-1 pl-5">
             <li>Copiez le fichier <code>.env.example</code> en <code>.env</code>.</li>
@@ -39,7 +39,7 @@ export default function ConfigMissing() {
             <li>Relancez le workflow « Deploiement GitHub Pages ».</li>
           </ol>
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-ink-3">
             Le detail pas a pas se trouve dans le fichier <code>README.md</code> du projet.
           </p>
         </div>
