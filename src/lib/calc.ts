@@ -7,8 +7,10 @@
  * montants que ceux qui seront enregistres.
  *
  * Regles d'arrondi :
- *  - tous les montants intermediaires sont arrondis au centime (2 decimales)
- *    avec un arrondi « commercial » (0,005 -> 0,01) ;
+ *  - tous les montants sont arrondis a la PRECISION DE LA DEVISE des le calcul
+ *    (2 decimales en euro, 0 en FCFA), avec un arrondi « commercial ».
+ *    Arrondir seulement a l'affichage produirait des tickets ou la somme des
+ *    lignes ne retombe pas sur le total ;
  *  - le HT est deduit du TTC : HT = arrondi(TTC / (1 + taux/100)),
  *    puis TVA = TTC - HT. La somme des lignes est donc toujours exacte.
  */
@@ -47,11 +49,11 @@ export function toPacks(baseUnits: number, packSize: number): { packs: number; r
 // ---------------------------------------------------------------------------
 
 /** Montant d'une remise appliquee a une base (jamais negative, jamais superieure a la base). */
-export function discountAmount(base: number, type: DiscountType, value: number): number {
+export function discountAmount(base: number, type: DiscountType, value: number, decimals = 2): number {
   const v = Number.isFinite(value) ? value : 0
   let amount = 0
-  if (type === 'pourcentage') amount = round2((base * v) / 100)
-  else if (type === 'montant') amount = Math.min(v, base)
+  if (type === 'pourcentage') amount = roundTo((base * v) / 100, decimals)
+  else if (type === 'montant') amount = Math.min(roundTo(v, decimals), base)
   return Math.max(0, Math.min(amount, Math.max(0, base)))
 }
 
@@ -73,6 +75,8 @@ export interface SaleLineInput {
 }
 
 export interface SaleLineResult {
+  /** Prix unitaire ramene a la precision de la devise (celui du ticket). */
+  unitPriceTtc: number
   /** Quantite x prix unitaire, avant remise. */
   gross: number
   /** Remise propre a la ligne. */
@@ -130,10 +134,15 @@ export function computeSale(
   inputs: SaleLineInput[],
   ticketDiscountType: DiscountType = 'aucune',
   ticketDiscountValue = 0,
+  /** Decimales de la devise : 2 pour l'euro, 0 pour le FCFA. */
+  decimals = 2,
 ): SaleTotals {
   const n = inputs.length
 
   // --- 1. nets de ligne --------------------------------------------------
+  // Le prix unitaire est d'abord ramene a la precision de la devise : en FCFA,
+  // 2 articles a 6,50 valent 2 x 7 = 14, et non 13.
+  const units: number[] = []
   const gross: number[] = []
   const ownDiscounts: number[] = []
   const nets: number[] = []
@@ -142,18 +151,20 @@ export function computeSale(
   let lineDiscountTotal = 0
 
   for (const line of inputs) {
-    const g = round2((line.quantity || 0) * (line.unitPriceTtc || 0))
-    const d = discountAmount(g, line.discountType ?? 'aucune', line.discountValue ?? 0)
+    const unit = roundTo(line.unitPriceTtc || 0, decimals)
+    const g = roundTo((line.quantity || 0) * unit, decimals)
+    const d = discountAmount(g, line.discountType ?? 'aucune', line.discountValue ?? 0, decimals)
+    units.push(unit)
     gross.push(g)
     ownDiscounts.push(d)
-    nets.push(round2(g - d))
-    sumNet = round2(sumNet + (g - d))
-    grossTotal = round2(grossTotal + g)
-    lineDiscountTotal = round2(lineDiscountTotal + d)
+    nets.push(roundTo(g - d, decimals))
+    sumNet = roundTo(sumNet + (g - d), decimals)
+    grossTotal = roundTo(grossTotal + g, decimals)
+    lineDiscountTotal = roundTo(lineDiscountTotal + d, decimals)
   }
 
   // --- 2. remise ticket --------------------------------------------------
-  const ticketDiscount = discountAmount(sumNet, ticketDiscountType, ticketDiscountValue)
+  const ticketDiscount = discountAmount(sumNet, ticketDiscountType, ticketDiscountValue, decimals)
 
   // --- 3 & 4. repartition au prorata, puis HT/TVA ------------------------
   const lines: SaleLineResult[] = []
@@ -166,32 +177,33 @@ export function computeSale(
     let allocated = 0
     if (ticketDiscount > 0 && sumNet > 0) {
       if (i < n - 1) {
-        allocated = round2((ticketDiscount * nets[i]) / sumNet)
-        running = round2(running + allocated)
+        allocated = roundTo((ticketDiscount * nets[i]) / sumNet, decimals)
+        running = roundTo(running + allocated, decimals)
       } else {
-        allocated = round2(ticketDiscount - running)
+        allocated = roundTo(ticketDiscount - running, decimals)
       }
     }
 
-    const ttc = round2(nets[i] - allocated)
+    const ttc = roundTo(nets[i] - allocated, decimals)
     const rate = inputs[i].vatRate || 0
-    const ht = round2(ttc / (1 + rate / 100))
+    const ht = roundTo(ttc / (1 + rate / 100), decimals)
     const baseUnits = toBaseUnits(inputs[i].quantity || 0, inputs[i].packSize ?? 1)
 
     lines.push({
+      unitPriceTtc: units[i],
       gross: gross[i],
       ownDiscount: ownDiscounts[i],
       allocatedDiscount: allocated,
-      totalDiscount: round2(ownDiscounts[i] + allocated),
+      totalDiscount: roundTo(ownDiscounts[i] + allocated, decimals),
       ttc,
       ht,
-      vat: round2(ttc - ht),
+      vat: roundTo(ttc - ht, decimals),
       vatRate: rate,
       baseUnits,
     })
 
-    totalTtc = round2(totalTtc + ttc)
-    totalHt = round2(totalHt + ht)
+    totalTtc = roundTo(totalTtc + ttc, decimals)
+    totalHt = roundTo(totalHt + ht, decimals)
     totalBaseUnits = round2(totalBaseUnits + baseUnits)
   }
 
@@ -199,9 +211,9 @@ export function computeSale(
   const buckets = new Map<number, VatBucket>()
   for (const l of lines) {
     const b = buckets.get(l.vatRate) ?? { rate: l.vatRate, base: 0, vat: 0, ttc: 0 }
-    b.base = round2(b.base + l.ht)
-    b.vat = round2(b.vat + l.vat)
-    b.ttc = round2(b.ttc + l.ttc)
+    b.base = roundTo(b.base + l.ht, decimals)
+    b.vat = roundTo(b.vat + l.vat, decimals)
+    b.ttc = roundTo(b.ttc + l.ttc, decimals)
     buckets.set(l.vatRate, b)
   }
 
@@ -210,10 +222,10 @@ export function computeSale(
     grossTotal,
     lineDiscountTotal,
     ticketDiscount,
-    discountTotal: round2(lineDiscountTotal + ticketDiscount),
+    discountTotal: roundTo(lineDiscountTotal + ticketDiscount, decimals),
     totalTtc,
     totalHt,
-    totalVat: round2(totalTtc - totalHt),
+    totalVat: roundTo(totalTtc - totalHt, decimals),
     vatBreakdown: [...buckets.values()].sort((a, b) => b.rate - a.rate),
     totalBaseUnits,
   }

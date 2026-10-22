@@ -156,8 +156,15 @@ export const useCart = create<CartState>()(
   ),
 )
 
-/** Totaux du panier, calcules exactement comme le serveur. */
-export function cartTotals(state: Pick<CartState, 'lines' | 'ticketDiscountType' | 'ticketDiscountValue'>): SaleTotals {
+/**
+ * Totaux du panier, calcules exactement comme le serveur.
+ * `decimals` est la precision de la devise (0 en FCFA) : sans elle, l'ecran
+ * afficherait des lignes qui ne font pas la somme du total.
+ */
+export function cartTotals(
+  state: Pick<CartState, 'lines' | 'ticketDiscountType' | 'ticketDiscountValue'>,
+  decimals = 2,
+): SaleTotals {
   return computeSale(
     state.lines.map((l) => ({
       quantity: l.quantity,
@@ -169,5 +176,6 @@ export function cartTotals(state: Pick<CartState, 'lines' | 'ticketDiscountType'
     })),
     state.ticketDiscountType,
     state.ticketDiscountValue,
+    decimals,
   )
 }

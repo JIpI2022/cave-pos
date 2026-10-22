@@ -321,3 +321,87 @@ describe('stock', () => {
     expect(stockValueHt(0, 14.5)).toBe(0)
   })
 })
+
+describe('devise sans centimes (FCFA) : le ticket doit toujours tomber juste', () => {
+  /**
+   * PARITE AVEC POSTGRESQL — cas signale en production.
+   * Deux bieres a 6,50 et 2,90 dans une boutique reglee en FCFA (0 decimale).
+   * Avant correction, le ticket affichait des lignes a 7 et 3 pour un total de
+   * 9 : les montants etaient calcules au centime et arrondis seulement a
+   * l'affichage. PostgreSQL renvoie desormais 7 + 3 = 10, HT 9 + TVA 1.
+   */
+  it('reproduit le ticket signale par la boutique', () => {
+    const t = computeSale(
+      [
+        { quantity: 1, unitPriceTtc: 6.5, vatRate: 20 },
+        { quantity: 1, unitPriceTtc: 2.9, vatRate: 20 },
+      ],
+      'aucune', 0, 0,
+    )
+
+    expect(t.lines[0].unitPriceTtc).toBe(7)
+    expect(t.lines[0].ttc).toBe(7)
+    expect(t.lines[1].unitPriceTtc).toBe(3)
+    expect(t.lines[1].ttc).toBe(3)
+
+    expect(t.totalTtc).toBe(10)          // et non 9
+    expect(t.totalHt).toBe(9)
+    expect(t.totalVat).toBe(1)
+    expect(t.totalHt + t.totalVat).toBe(t.totalTtc)
+  })
+
+  it('multiplie un prix deja arrondi, pas le prix brut', () => {
+    // 2 x 6,50 doit valoir 2 x 7 = 14, et non arrondi(13) = 13
+    const t = computeSale([{ quantity: 2, unitPriceTtc: 6.5, vatRate: 20 }], 'aucune', 0, 0)
+    expect(t.lines[0].unitPriceTtc).toBe(7)
+    expect(t.totalTtc).toBe(14)
+  })
+
+  it('repartit une remise de ticket sans perdre un franc', () => {
+    const t = computeSale(
+      [
+        { quantity: 1, unitPriceTtc: 5000, vatRate: 18 },
+        { quantity: 1, unitPriceTtc: 3000, vatRate: 18 },
+        { quantity: 1, unitPriceTtc: 2000, vatRate: 18 },
+      ],
+      'pourcentage', 7, 0,
+    )
+    const sommeLignes = t.lines.reduce((s, l) => s + l.ttc, 0)
+    const sommeRemises = t.lines.reduce((s, l) => s + l.allocatedDiscount, 0)
+
+    expect(t.ticketDiscount).toBe(700)
+    expect(sommeRemises).toBe(700)            // aucun centime perdu
+    expect(sommeLignes).toBe(t.totalTtc)
+    expect(t.totalTtc).toBe(9300)
+    // Valeurs relevees sur PostgreSQL pour le meme panier : 4650 + 2790 + 1860
+    expect(t.lines.map((l) => l.ttc)).toEqual([4650, 2790, 1860])
+    expect(t.lines.every((l) => Number.isInteger(l.ttc))).toBe(true)
+  })
+
+  it('n accepte aucun montant a decimale en FCFA', () => {
+    const t = computeSale(
+      [
+        { quantity: 3, unitPriceTtc: 1234.56, vatRate: 18, discountType: 'pourcentage', discountValue: 13 },
+        { quantity: 2, unitPriceTtc: 987.65, vatRate: 18 },
+      ],
+      'montant', 333, 0,
+    )
+    const entiers = [
+      t.totalTtc, t.totalHt, t.totalVat, t.discountTotal,
+      ...t.lines.flatMap((l) => [l.ttc, l.ht, l.vat, l.totalDiscount, l.unitPriceTtc]),
+      ...t.vatBreakdown.flatMap((b) => [b.base, b.vat, b.ttc]),
+    ]
+    expect(entiers.every(Number.isInteger)).toBe(true)
+    expect(t.totalHt + t.totalVat).toBe(t.totalTtc)
+    expect(t.lines.reduce((s, l) => s + l.ttc, 0)).toBe(t.totalTtc)
+  })
+
+  it('laisse l euro inchange (2 decimales par defaut)', () => {
+    const t = computeSale([
+      { quantity: 1, unitPriceTtc: 6.5, vatRate: 20 },
+      { quantity: 1, unitPriceTtc: 2.9, vatRate: 20 },
+    ])
+    expect(t.totalTtc).toBe(9.4)
+    expect(t.lines[0].unitPriceTtc).toBe(6.5)
+  })
+})

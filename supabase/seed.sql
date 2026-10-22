@@ -55,22 +55,27 @@ on conflict (code) do nothing;
 -- ---------------------------------------------------------------------
 -- Fournisseurs
 -- ---------------------------------------------------------------------
-insert into public.suppliers (name, contact, phone, email, address) values
+insert into public.suppliers (name, contact, phone, email, address)
+select * from (values
   ('Domaines & Terroirs',   'M. Kouassi',  '+225 27 21 00 11 22', 'contact@domaines-terroirs.ci', 'Zone 4, Abidjan'),
   ('Maison Rhone Vallee',   'Mme Girard',  '+225 27 21 00 33 44', 'ventes@rhone-vallee.ci',       'Treichville, Abidjan'),
   ('Negoce Champagne Est',  'M. Perrin',   '+225 27 22 00 55 66', 'commandes@nce.ci',             'Plateau, Abidjan'),
   ('Spiritueux Import',     'M. Da Silva', '+225 27 21 00 77 88', 'pro@spiritueux-import.ci',     'Port-Bouet, Abidjan'),
   ('Brasserie Locale',      'Mme Morel',   '+225 27 23 00 99 00', 'pro@brasserie-locale.ci',      'Yopougon, Abidjan')
-on conflict do nothing;
+) as f(name, contact, phone, email, address)
+-- Pas de contrainte d'unicite sur le nom : on evite les doublons a la relance.
+where not exists (select 1 from public.suppliers s where s.name = f.name);
 
 -- ---------------------------------------------------------------------
 -- Clients de demonstration
 -- ---------------------------------------------------------------------
-insert into public.customers (name, phone, email, address) values
+insert into public.customers (name, phone, email, address)
+select * from (values
   ('Restaurant Le Pressoir',     '+225 07 07 00 00 01', 'achats@lepressoir.ci', 'Zone 4, Abidjan'),
   ('Mme Aka Marie-Claire',       '+225 05 05 00 00 02', 'mc.aka@email.ci',      'Cocody, Abidjan'),
   ('Comite d''entreprise Atlas',  '+225 01 01 00 00 03', 'ce@atlas.ci',          'Plateau, Abidjan')
-on conflict do nothing;
+) as c(name, phone, email, address)
+where not exists (select 1 from public.customers x where x.name = c.name);
 
 -- ---------------------------------------------------------------------
 -- Catalogue : 22 references (vins, champagnes, spiritueux, bieres, softs)
@@ -81,8 +86,8 @@ on conflict do nothing;
 -- (1 bouteille), TVA a 20 % : passez-la a 18 % dans Parametres si votre
 -- activite releve du taux normal ivoirien.
 -- ---------------------------------------------------------------------
-with cat as (select code, id from public.categories),
-     sup as (select name, id from public.suppliers)
+with cat as (select code, min(id::text)::uuid as id from public.categories group by code),
+     sup as (select name, min(id::text)::uuid as id from public.suppliers group by name)
 insert into public.products
   (name, category_id, appellation, vintage, volume_ml, supplier_id,
    purchase_price_ht, sale_price_ttc, vat_rate, barcode, unit, pack_size, stock_alert_threshold)
@@ -94,32 +99,48 @@ select v.name,
 from (values
   -- nom, categorie, appellation, millesime, cl, fournisseur, achat HT, vente TTC, EAN, unite, pack, seuil
   ('Chateau Margaux Second Vin',  'vin_rouge',  'Margaux',                2019, 750, 'Domaines & Terroirs', 27600, 52400, '3760012345670', 'bouteille', 1, 6),
-  ('Chateau Les Ormes Bordeaux',  'vin_rouge',  'Bordeaux Superieur',     2020, 750, 'Domaines & Terroirs',  5.20,  9.90, '3760012345687', 'bouteille', 1, 12),
+  ('Chateau Les Ormes Bordeaux',  'vin_rouge',  'Bordeaux Superieur',     2020, 750, 'Domaines & Terroirs',  3400, 6500, '3760012345687', 'bouteille', 1, 12),
   ('Saint-Emilion Grand Cru',     'vin_rouge',  'Saint-Emilion Grand Cru',2018, 750, 'Domaines & Terroirs', 9500, 18000, '3760012345694', 'bouteille', 1, 6),
-  ('Crozes-Hermitage Les Galets', 'vin_rouge',  'Crozes-Hermitage',       2021, 750, 'Maison Rhone Vallee',  9.80, 18.90, '3760012345700', 'bouteille', 1, 6),
-  ('Cotes du Rhone Villages',     'vin_rouge',  'Cotes du Rhone Villages',2022, 750, 'Maison Rhone Vallee',  4.60,  8.90, '3760012345717', 'bouteille', 1, 12),
+  ('Crozes-Hermitage Les Galets', 'vin_rouge',  'Crozes-Hermitage',       2021, 750, 'Maison Rhone Vallee',  6400, 12400, '3760012345700', 'bouteille', 1, 6),
+  ('Cotes du Rhone Villages',     'vin_rouge',  'Cotes du Rhone Villages',2022, 750, 'Maison Rhone Vallee',  3000, 5800, '3760012345717', 'bouteille', 1, 12),
   ('Gigondas Vieilles Vignes',    'vin_rouge',  'Gigondas',               2020, 750, 'Maison Rhone Vallee', 7900, 15400, '3760012345724', 'bouteille', 1, 6),
   ('Bourgogne Pinot Noir',        'vin_rouge',  'Bourgogne',              2021, 750, 'Domaines & Terroirs', 6800, 13100, '3760012345731', 'bouteille', 1, 6),
   ('Chablis Premier Cru',         'vin_blanc',  'Chablis 1er Cru',        2021, 750, 'Domaines & Terroirs', 10500, 20300, '3760012345748', 'bouteille', 1, 6),
-  ('Sancerre Les Silex',          'vin_blanc',  'Sancerre',               2022, 750, 'Domaines & Terroirs',  9.20, 17.90, '3760012345755', 'bouteille', 1, 6),
+  ('Sancerre Les Silex',          'vin_blanc',  'Sancerre',               2022, 750, 'Domaines & Terroirs',  6000, 11700, '3760012345755', 'bouteille', 1, 6),
   ('Riesling Grand Cru',          'vin_blanc',  'Alsace Grand Cru',       2020, 750, 'Domaines & Terroirs', 7500, 14800, '3760012345762', 'bouteille', 1, 6),
   ('Condrieu Viognier',           'vin_blanc',  'Condrieu',               2021, 750, 'Maison Rhone Vallee', 13800, 26200, '3760012345779', 'bouteille', 1, 3),
-  ('Muscadet Sevre-et-Maine',     'vin_blanc',  'Muscadet',               2022, 750, 'Brasserie Locale',     3.40,  6.90, '3760012345786', 'bouteille', 1, 12),
-  ('Tavel Rose Tradition',        'vin_rose',   'Tavel',                  2022, 750, 'Maison Rhone Vallee',  6.10, 11.90, '3760012345793', 'bouteille', 1, 12),
-  ('Cotes de Provence Rose',      'vin_rose',   'Cotes de Provence',      2023, 750, 'Domaines & Terroirs',  5.80, 11.50, '3760012345809', 'bouteille', 1, 12),
-  ('Champagne Brut Tradition',    'champagne',  'Champagne',              null, 750, 'Negoce Champagne Est',18.50, 34.90, '3760012345816', 'bouteille', 1, 6),
-  ('Champagne Blanc de Blancs',   'champagne',  'Champagne',              2016, 750, 'Negoce Champagne Est',27.00, 52.00, '3760012345823', 'bouteille', 1, 3),
+  ('Muscadet Sevre-et-Maine',     'vin_blanc',  'Muscadet',               2022, 750, 'Brasserie Locale',     2200, 4500, '3760012345786', 'bouteille', 1, 12),
+  ('Tavel Rose Tradition',        'vin_rose',   'Tavel',                  2022, 750, 'Maison Rhone Vallee',  4000, 7800, '3760012345793', 'bouteille', 1, 12),
+  ('Cotes de Provence Rose',      'vin_rose',   'Cotes de Provence',      2023, 750, 'Domaines & Terroirs',  3800, 7500, '3760012345809', 'bouteille', 1, 12),
+  ('Champagne Brut Tradition',    'champagne',  'Champagne',              null, 750, 'Negoce Champagne Est',12100, 22900, '3760012345816', 'bouteille', 1, 6),
+  ('Champagne Blanc de Blancs',   'champagne',  'Champagne',              2016, 750, 'Negoce Champagne Est',17700, 34100, '3760012345823', 'bouteille', 1, 3),
   ('Cremant de Loire Brut',       'champagne',  'Cremant de Loire',       null, 750, 'Negoce Champagne Est', 4200, 8500, '3760012345830', 'bouteille', 1, 6),
-  ('Whisky Single Malt 12 ans',   'spiritueux', 'Ecosse - Speyside',      null, 700, 'Spiritueux Import',   24.00, 46.90, '5000012345842', 'bouteille', 1, 3),
-  ('Rhum Agricole VSOP',          'spiritueux', 'Martinique',             null, 700, 'Spiritueux Import',   19.50, 37.50, '3760012345854', 'bouteille', 1, 3),
-  ('Cognac VS',                   'spiritueux', 'Cognac',                 null, 700, 'Spiritueux Import',   17.00, 32.90, '3760012345861', 'bouteille', 1, 3),
-  ('Gin London Dry Premium',      'spiritueux', 'Angleterre',             null, 700, 'Spiritueux Import',   15.00, 29.90, '5000012345873', 'bouteille', 1, 3),
-  ('Biere IPA artisanale 33cl',   'biere',      'Brasserie Locale',       null, 330, 'Brasserie Locale',     1.35,  2.90, '3760012345885', 'carton_12', 12, 24),
-  ('Biere Blonde de Garde 75cl',  'biere',      'Brasserie Locale',       null, 750, 'Brasserie Locale',     3.10,  6.50, '3760012345892', 'bouteille', 1, 12),
-  ('Eau minerale gazeuse 1L',     'soft',       'France',                 null,1000, 'Brasserie Locale',     0.42,  1.20, '3760012345908', 'carton_6',   6, 24),
-  ('Jus de raisin bio 75cl',      'soft',       'France',                 null, 750, 'Brasserie Locale',     1.90,  3.90, '3760012345915', 'bouteille', 1, 12)
+  ('Whisky Single Malt 12 ans',   'spiritueux', 'Ecosse - Speyside',      null, 700, 'Spiritueux Import',   15700, 30800, '5000012345842', 'bouteille', 1, 3),
+  ('Rhum Agricole VSOP',          'spiritueux', 'Martinique',             null, 700, 'Spiritueux Import',   12800, 24600, '3760012345854', 'bouteille', 1, 3),
+  ('Cognac VS',                   'spiritueux', 'Cognac',                 null, 700, 'Spiritueux Import',   11200, 21600, '3760012345861', 'bouteille', 1, 3),
+  ('Gin London Dry Premium',      'spiritueux', 'Angleterre',             null, 700, 'Spiritueux Import',   9800, 19600, '5000012345873', 'bouteille', 1, 3),
+  ('Biere IPA artisanale 33cl',   'biere',      'Brasserie Locale',       null, 330, 'Brasserie Locale',     875, 1900, '3760012345885', 'carton_12', 12, 24),
+  ('Biere Blonde de Garde 75cl',  'biere',      'Brasserie Locale',       null, 750, 'Brasserie Locale',     2000, 4300, '3760012345892', 'bouteille', 1, 12),
+  ('Eau minerale gazeuse 1L',     'soft',       'France',                 null,1000, 'Brasserie Locale',     275, 800, '3760012345908', 'carton_6',   6, 24),
+  ('Jus de raisin bio 75cl',      'soft',       'France',                 null, 750, 'Brasserie Locale',     1250, 2600, '3760012345915', 'bouteille', 1, 12)
 ) as v(name, cat, appellation, vintage, volume_ml, supplier, achat, vente, barcode, unit, pack, seuil)
-on conflict do nothing;
+-- Rejouable : si le produit existe deja (meme code-barres), ses caracteristiques
+-- de demonstration sont MISES A JOUR. C'est ce qui permet de corriger des prix
+-- saisis dans une autre devise en relancant simplement ce fichier.
+-- Le stock, lui, n'est jamais touche ici.
+on conflict (barcode) where barcode is not null and barcode <> '' do update set
+  name                  = excluded.name,
+  category_id           = excluded.category_id,
+  appellation           = excluded.appellation,
+  vintage               = excluded.vintage,
+  volume_ml             = excluded.volume_ml,
+  supplier_id           = excluded.supplier_id,
+  purchase_price_ht     = excluded.purchase_price_ht,
+  sale_price_ttc        = excluded.sale_price_ttc,
+  vat_rate              = excluded.vat_rate,
+  unit                  = excluded.unit,
+  pack_size             = excluded.pack_size,
+  stock_alert_threshold = excluded.stock_alert_threshold;
 
 -- Un produit volontairement SANS code-barres : le trigger lui attribue un code
 -- interne (CAV000001, CAV000002...) pour tester l'impression d'etiquettes.

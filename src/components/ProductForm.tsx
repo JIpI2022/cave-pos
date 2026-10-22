@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/useToast'
 import { useAuth } from '@/hooks/useAuth'
 import { detectBarcodeKind, normalizeScan } from '@/lib/barcode'
 import { formatMoney, formatPercent, parseNumber, UNIT_LABELS, UNIT_PACK_SIZE } from '@/lib/format'
-import { htFromTtc, marginRate, unitMarginHt } from '@/lib/calc'
+import { htFromTtc, marginRate, roundTo, unitMarginHt } from '@/lib/calc'
 import type { Product, ProductFull, ProductUnit } from '@/types/database'
 
 interface FormState {
@@ -144,8 +144,12 @@ export default function ProductForm({
     setError(null)
 
     if (!form.name.trim()) { setError('Le nom du produit est obligatoire.'); return }
-    const vente = parseNumber(form.sale_price_ttc)
-    if (vente === null || vente < 0) { setError('Le prix de vente TTC est obligatoire.'); return }
+    const venteSaisie = parseNumber(form.sale_price_ttc)
+    if (venteSaisie === null || venteSaisie < 0) { setError('Le prix de vente TTC est obligatoire.'); return }
+    // On enregistre les prix a la precision de la devise : en FCFA, un prix a
+    // 6,50 produirait des tickets dont les lignes ne font pas la somme du total.
+    const decimales = settings?.currency_decimals ?? 2
+    const vente = roundTo(venteSaisie, decimales)
 
     const payload = {
       name: form.name.trim(),
@@ -154,7 +158,7 @@ export default function ProductForm({
       vintage: parseNumber(form.vintage),
       volume_ml: parseNumber(form.volume_ml),
       supplier_id: form.supplier_id || null,
-      purchase_price_ht: parseNumber(form.purchase_price_ht) ?? 0,
+      purchase_price_ht: roundTo(parseNumber(form.purchase_price_ht) ?? 0, decimales),
       sale_price_ttc: vente,
       vat_rate: parseNumber(form.vat_rate) ?? 20,
       barcode: form.barcode.trim() ? normalizeScan(form.barcode) : null,

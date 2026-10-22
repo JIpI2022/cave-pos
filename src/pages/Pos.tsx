@@ -44,7 +44,7 @@ export default function Pos() {
   const toast = useToast()
   const catalog = useCatalog()
   const cart = useCart()
-  const totals = useMemo(() => cartTotals(cart), [cart])
+  const totals = useMemo(() => cartTotals(cart, currency.decimals), [cart, currency.decimals])
 
   const [session, setSession] = useState<CashSession | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
@@ -179,7 +179,9 @@ export default function Pos() {
       items: cart.lines.map((l, i) => ({
         label: l.label,
         quantity: l.quantity,
-        unit_price_ttc: l.unitPriceTtc,
+        // Prix unitaire deja ramene a la precision de la devise : le ticket
+        // affiche donc des lignes qui font exactement la somme du total.
+        unit_price_ttc: totals.lines[i]?.unitPriceTtc ?? l.unitPriceTtc,
         line_ttc: totals.lines[i]?.ttc ?? 0,
         line_discount: totals.lines[i]?.totalDiscount ?? 0,
         vat_rate: l.vatRate,
@@ -462,7 +464,7 @@ function CartPanel({
 }) {
   const cart = useCart()
   const { currency } = useSettings()
-  const totals = useMemo(() => cartTotals(cart), [cart])
+  const totals = useMemo(() => cartTotals(cart, currency.decimals), [cart, currency.decimals])
 
   return (
     <div className={embedded ? '' : 'card sticky top-4 flex max-h-[calc(100vh-7rem)] flex-col'}>
@@ -494,7 +496,7 @@ function CartPanel({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">{line.label}</p>
                     <p className="text-xs text-slate-500">
-                      {formatMoney(line.unitPriceTtc, currency)} / {line.unit}
+                      {formatMoney(computed?.unitPriceTtc ?? line.unitPriceTtc, currency)} / {line.unit}
                       {line.packSize > 1 && ` (${line.packSize} bouteilles)`}
                     </p>
                   </div>

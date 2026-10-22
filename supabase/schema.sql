@@ -86,6 +86,15 @@ alter table public.app_settings add column if not exists mobile_money_operators 
 
 insert into public.app_settings (id) values (1) on conflict (id) do nothing;
 
+-- Nombre de decimales de la devise (0 pour le FCFA, 2 pour l'euro).
+-- Tous les montants sont arrondis a CETTE precision au moment du calcul, et
+-- non seulement a l'affichage : sans cela, un ticket en FCFA peut afficher des
+-- lignes qui ne font pas la somme du total.
+create or replace function public.currency_decimals()
+returns smallint language sql stable security definer set search_path = public
+as $$ select coalesce(currency_decimals, 2) from public.app_settings where id = 1 $$;
+
+
 -- ---------------------------------------------------------------------
 -- 3. UTILISATEURS & ROLES
 -- ---------------------------------------------------------------------
@@ -266,7 +275,9 @@ language plpgsql security definer set search_path = public
 as $$
 declare v_prefix text; v_num bigint; v_pad smallint;
 begin
-  if not public.is_manager() then
+  -- auth.uid() nul = editeur SQL de Supabase ou cle service_role, c'est-a-dire
+  -- le proprietaire du projet : l'import de produits par SQL reste possible.
+  if auth.uid() is not null and not public.is_manager() then
     raise exception 'Droits insuffisants pour generer un code produit.';
   end if;
 
@@ -544,7 +555,7 @@ begin
       update public.products set purchase_price_ht = l.purchase_price_ht where id = l.product_id;
     end if;
 
-    v_total := v_total + round(l.quantity * l.pack_size * l.purchase_price_ht, 2);
+    v_total := v_total + round(l.quantity * l.pack_size * l.purchase_price_ht, public.currency_decimals());
   end loop;
 
   update public.receptions
@@ -798,7 +809,7 @@ as $$
                   from public.sale_returns r
                   join public.sales s on s.id = r.sale_id
                  where s.cash_session_id = p_session_id), 0)
-  , 2)
+  , public.currency_decimals())
 $$;
 
 -- ---- Cloture de caisse (rapport Z) -------------------------------------
@@ -824,9 +835,9 @@ begin
      set status = 'cloturee',
          closed_at = now(),
          closed_by = auth.uid(),
-         counted_cash = round(p_counted_cash, 2),
+         counted_cash = round(p_counted_cash, public.currency_decimals()),
          expected_cash = v_expected,
-         cash_gap = round(p_counted_cash, 2) - v_expected,
+         cash_gap = round(p_counted_cash, public.currency_decimals()) - v_expected,
          notes = case when coalesce(p_notes,'') = '' then notes
                       else coalesce(notes,'') || case when coalesce(notes,'') = '' then '' else E'\n' end || p_notes end
    where id = p_session_id
@@ -866,8 +877,10 @@ declare
   v_prod      public.products;
   v_gross     numeric(14,2);
   v_ldisc     numeric(14,2);
+  v_unit      numeric(14,2);
   nets        numeric[] := array[]::numeric[];
   discs       numeric[] := array[]::numeric[];
+  units       numeric[] := array[]::numeric[];
   v_sum_net   numeric(14,2) := 0;
   v_tdisc     numeric(14,2) := 0;
   v_alloc     numeric(14,2);
@@ -915,24 +928,28 @@ begin
   -- ---- Passe 1 : net par ligne -----------------------------------------
   for i in 1 .. n loop
     it := v_items -> (i - 1);
-    v_gross := round((it ->> 'quantity')::numeric * (it ->> 'unit_price_ttc')::numeric, 2);
+    -- Le prix unitaire est d'abord ramene a la precision de la devise : en FCFA,
+    -- 2 articles a 6,50 valent 2 x 7 = 14, et non 13.
+    v_unit  := round((it ->> 'unit_price_ttc')::numeric, v_decimals);
+    v_gross := round((it ->> 'quantity')::numeric * v_unit, v_decimals);
     if v_gross < 0 then raise exception 'Montant de ligne negatif interdit.'; end if;
 
     v_ldisc := case coalesce(it ->> 'discount_type', 'aucune')
-                 when 'pourcentage' then round(v_gross * coalesce((it ->> 'discount_value')::numeric, 0) / 100, 2)
-                 when 'montant'     then least(coalesce((it ->> 'discount_value')::numeric, 0), v_gross)
+                 when 'pourcentage' then round(v_gross * coalesce((it ->> 'discount_value')::numeric, 0) / 100, v_decimals)
+                 when 'montant'     then least(round(coalesce((it ->> 'discount_value')::numeric, 0), v_decimals), v_gross)
                  else 0 end;
     v_ldisc := greatest(v_ldisc, 0);
 
     nets  := array_append(nets, v_gross - v_ldisc);
     discs := array_append(discs, v_ldisc);
+    units := array_append(units, v_unit);
     v_sum_net := v_sum_net + (v_gross - v_ldisc);
   end loop;
 
   -- ---- Passe 2 : remise ticket -----------------------------------------
   v_tdisc := case coalesce(p ->> 'ticket_discount_type', 'aucune')
-               when 'pourcentage' then round(v_sum_net * coalesce((p ->> 'ticket_discount_value')::numeric, 0) / 100, 2)
-               when 'montant'     then least(coalesce((p ->> 'ticket_discount_value')::numeric, 0), v_sum_net)
+               when 'pourcentage' then round(v_sum_net * coalesce((p ->> 'ticket_discount_value')::numeric, 0) / 100, v_decimals)
+               when 'montant'     then least(round(coalesce((p ->> 'ticket_discount_value')::numeric, 0), v_decimals), v_sum_net)
                else 0 end;
   v_tdisc := greatest(least(v_tdisc, v_sum_net), 0);
 
@@ -960,14 +977,14 @@ begin
     if v_tdisc = 0 or v_sum_net <= 0 then
       v_alloc := 0;
     elsif i < n then
-      v_alloc := round(v_tdisc * nets[i] / v_sum_net, 2);
+      v_alloc := round(v_tdisc * nets[i] / v_sum_net, v_decimals);
       v_running := v_running + v_alloc;
     else
-      v_alloc := round(v_tdisc - v_running, 2);
+      v_alloc := round(v_tdisc - v_running, v_decimals);
     end if;
 
     v_ttc := nets[i] - v_alloc;
-    v_ht  := round(v_ttc / (1 + coalesce((it ->> 'vat_rate')::numeric, 0) / 100), 2);
+    v_ht  := round(v_ttc / (1 + coalesce((it ->> 'vat_rate')::numeric, 0) / 100), v_decimals);
 
     select * into v_prod from public.products where id = nullif(it ->> 'product_id', '')::uuid;
 
@@ -981,7 +998,7 @@ begin
             (it ->> 'quantity')::numeric,
             coalesce((it ->> 'pack_size')::smallint, 1),
             coalesce(nullif(it ->> 'unit', ''), 'bouteille'),
-            (it ->> 'unit_price_ttc')::numeric,
+            units[i],
             coalesce((it ->> 'vat_rate')::numeric, 0),
             coalesce(nullif(it ->> 'discount_type', ''), 'aucune')::public.discount_type,
             coalesce((it ->> 'discount_value')::numeric, 0),
@@ -1018,12 +1035,12 @@ begin
       insert into public.payments (sale_id, method, amount, tendered, change_given, reference, operator)
       values (v_sale.id,
               (pay ->> 'method')::public.payment_method,
-              round((pay ->> 'amount')::numeric, 2),
-              nullif(pay ->> 'tendered', '')::numeric,
-              round(coalesce((pay ->> 'change_given')::numeric, 0), 2),
+              round((pay ->> 'amount')::numeric, v_decimals),
+              round(nullif(pay ->> 'tendered', '')::numeric, v_decimals),
+              round(coalesce((pay ->> 'change_given')::numeric, 0), v_decimals),
               coalesce(pay ->> 'reference', ''),
               coalesce(pay ->> 'operator', ''));
-      v_paid := v_paid + round((pay ->> 'amount')::numeric, 2);
+      v_paid := v_paid + round((pay ->> 'amount')::numeric, v_decimals);
     end if;
   end loop;
 
@@ -1103,7 +1120,7 @@ begin
   end if;
 
   -- Montant rembourse au prorata du net de la ligne (remises incluses)
-  v_amount := round(it.line_ttc * p_quantity / it.quantity, 2);
+  v_amount := round(it.line_ttc * p_quantity / it.quantity, public.currency_decimals());
 
   insert into public.sale_returns (sale_id, sale_item_id, product_id, quantity, amount_ttc, reason, user_id)
   values (s.id, it.id, it.product_id, p_quantity, v_amount, btrim(p_reason), auth.uid())
@@ -1591,6 +1608,7 @@ grant execute on function public.pos_create_sale(jsonb)  to authenticated;
 grant execute on function public.cancel_sale(uuid, text)  to authenticated;
 grant execute on function public.return_sale_item(uuid, numeric, text) to authenticated;
 grant execute on function public.report_tz()             to authenticated;
+grant execute on function public.currency_decimals()    to authenticated;
 
 -- PostgreSQL accorde EXECUTE a PUBLIC par defaut : sans ce revoke, n'importe
 -- quel utilisateur connecte pourrait forger des entrees dans le journal d'audit.
