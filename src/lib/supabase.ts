@@ -15,6 +15,45 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 /** Permet d'afficher un ecran d'aide plutot qu'une page blanche si la config manque. */
 export const hasSupabaseConfig = Boolean(url && anonKey)
 
+/**
+ * Adresse du serveur contactee, affichee en cas de panne de connexion.
+ * Ce n'est pas un secret : elle circule dans chaque requete du navigateur.
+ * L'afficher permet de reperer tout de suite une adresse mal renseignee
+ * (par exemple celle du tableau de bord au lieu de celle du projet).
+ */
+export const supabaseHost = (() => {
+  if (!url) return '(non configure)'
+  try { return new URL(url).host } catch { return `${url} (adresse invalide)` }
+})()
+
+/**
+ * Teste si le serveur repond. N'importe quelle reponse HTTP suffit :
+ * une erreur d'authentification prouve deja que le serveur est joignable.
+ */
+export async function testerConnexion(): Promise<{ ok: boolean; detail: string }> {
+  if (!url) return { ok: false, detail: "Aucune adresse de serveur n'est configuree." }
+  try {
+    const reponse = await fetch(`${url.replace(/\/+$/, '')}/auth/v1/health`, {
+      method: 'GET',
+      headers: { apikey: anonKey ?? '' },
+      signal: AbortSignal.timeout(10_000),
+    })
+    return {
+      ok: true,
+      detail: `Le serveur ${supabaseHost} repond (code ${reponse.status}).`,
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (/abort|timeout/i.test(message)) {
+      return { ok: false, detail: `${supabaseHost} n'a pas repondu en 10 secondes.` }
+    }
+    return {
+      ok: false,
+      detail: `${supabaseHost} est injoignable depuis cet appareil (${message}).`,
+    }
+  }
+}
+
 export const supabase: SupabaseClient = createClient(
   url ?? 'https://placeholder.supabase.co',
   anonKey ?? 'placeholder-anon-key',

@@ -9,13 +9,23 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { supabase, describeError } from '@/lib/supabase'
+import { supabase, describeError, supabaseHost } from '@/lib/supabase'
 import type { Profile, UserRole } from '@/types/database'
+
+/**
+ * Delai au-dela duquel on cesse d'attendre la session et on affiche l'ecran
+ * de connexion. Sans cela, un serveur injoignable laisse l'utilisateur devant
+ * un rond qui tourne indefiniment : la bibliotheque Supabase reessaie de
+ * rafraichir le jeton en boucle et ne rend jamais la main.
+ */
+const DELAI_SESSION_MS = 8000
 
 interface AuthState {
   session: Session | null
   profile: Profile | null
   loading: boolean
+  /** Renseigne quand le serveur n'a pas pu etre joint au demarrage. */
+  connectionError: string | null
   /** Erreur de chargement du profil (compte desactive, RLS...). */
   profileError: string | null
   role: UserRole | null
@@ -36,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileError, setProfileError] = useState<string | null>(null)
   /** La session a ete resolue (depuis le stockage local ou le serveur). */
   const [authReady, setAuthReady] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
   /** Le profil correspondant a la session a ete charge (ou a echoue). */
   const [profileReady, setProfileReady] = useState(false)
   /** Incremente pour forcer un rechargement du profil. */
@@ -55,9 +66,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
 
-    supabase.auth.getSession().then(({ data }) => {
+    // On borne l'attente : au-dela, on rend la main avec un message clair.
+    const attente = new Promise<'delai'>((resolve) => setTimeout(() => resolve('delai'), DELAI_SESSION_MS))
+
+    Promise.race([supabase.auth.getSession(), attente]).then((resultat) => {
       if (cancelled) return
-      setSession(data.session)
+      if (resultat === 'delai') {
+        setSession(null)
+        setConnectionError(
+          `Le serveur ${supabaseHost} n'a pas repondu. Verifiez la connexion de `
+          + `cet appareil, puis reessayez.`,
+        )
+      } else {
+        setSession(resultat.data.session)
+        setConnectionError(null)
+      }
       setAuthReady(true)
     })
 
@@ -96,7 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         setProfile(null)
-        setProfileError(describeError(error))
+        const message = describeError(error)
+        setProfileError(
+          /injoignable/i.test(message)
+            ? `${message} (serveur ${supabaseHost})`
+            : message,
+        )
       } else if (!data) {
         setProfile(null)
         setProfileError(
@@ -156,12 +184,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     profile,
     loading: !authReady || !profileReady,
+    connectionError,
     profileError,
     role: profile?.role ?? null,
     isAdmin: profile?.role === 'admin',
     isManager: profile?.role === 'admin' || profile?.role === 'gerant',
     signIn, signUp, signOut, resetPassword, refreshProfile,
-  }), [session, profile, authReady, profileReady, profileError,
+  }), [session, profile, authReady, profileReady, connectionError, profileError,
        signIn, signUp, signOut, resetPassword, refreshProfile])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

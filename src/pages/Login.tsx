@@ -1,14 +1,17 @@
 /** Ecran de connexion / creation de compte. */
 
 import { useState } from 'react'
-import { Grape, LogIn, UserPlus } from 'lucide-react'
+import { Activity, Grape, LogIn, UserPlus } from 'lucide-react'
 import { Alert, Button, Field, Input } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { supabaseHost, testerConnexion } from '@/lib/supabase'
 
 type Mode = 'connexion' | 'inscription' | 'oubli'
 
 export default function Login() {
-  const { signIn, signUp, resetPassword } = useAuth()
+  const { signIn, signUp, resetPassword, connectionError } = useAuth()
+  const [diagnostic, setDiagnostic] = useState<{ ok: boolean; detail: string } | null>(null)
+  const [diagnosticEnCours, setDiagnosticEnCours] = useState(false)
   const [mode, setMode] = useState<Mode>('connexion')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -62,8 +65,42 @@ export default function Login() {
             {mode === 'connexion' ? 'Connexion' : mode === 'inscription' ? 'Creer un compte' : 'Mot de passe oublie'}
           </h2>
 
+          {connectionError && <Alert kind="warning">{connectionError}</Alert>}
           {error && <Alert kind="error">{error}</Alert>}
           {info && <Alert kind="success">{info}</Alert>}
+
+          {/* Diagnostic propose des qu'une panne de connexion est detectee */}
+          {(connectionError || /injoignable/i.test(error ?? '')) && (
+            <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <Button
+                type="button" variant="secondary" icon={Activity} className="w-full"
+                loading={diagnosticEnCours}
+                onClick={async () => {
+                  setDiagnosticEnCours(true)
+                  setDiagnostic(await testerConnexion())
+                  setDiagnosticEnCours(false)
+                }}
+              >
+                Tester la connexion au serveur
+              </Button>
+
+              {diagnostic && (
+                <Alert kind={diagnostic.ok ? 'success' : 'error'}>{diagnostic.detail}</Alert>
+              )}
+
+              <button
+                type="button"
+                className="w-full text-xs text-slate-500 underline"
+                onClick={() => {
+                  // Repli en cas de session locale abimee
+                  try { localStorage.removeItem('cave-pos-auth') } catch { /* stockage indisponible */ }
+                  window.location.reload()
+                }}
+              >
+                Effacer la session enregistree sur cet appareil et recharger
+              </button>
+            </div>
+          )}
 
           {mode === 'inscription' && (
             <Field label="Nom et prenom" required>
@@ -115,6 +152,9 @@ export default function Login() {
 
         <p className="mt-4 text-center text-xs text-slate-400">
           Le premier compte cree devient automatiquement administrateur.
+        </p>
+        <p className="mt-1 text-center text-[11px] text-slate-500">
+          Serveur : <span className="font-mono">{supabaseHost}</span>
         </p>
       </div>
     </div>
