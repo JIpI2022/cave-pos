@@ -98,8 +98,13 @@ create table if not exists public.profiles (
   created_at  timestamptz not null default now()
 );
 
--- Le tout premier compte cree devient automatiquement « admin ».
--- Les suivants sont crees avec le role « caissier » (modifiable par un admin).
+-- Le tout premier compte cree devient automatiquement « admin » et actif.
+--
+-- SECURITE : les comptes suivants sont crees « caissier » et INACTIFS. Le role
+-- n'est JAMAIS lu dans les metadonnees fournies par le client : celles-ci sont
+-- choisies librement par qui s'inscrit, si bien qu'un visiteur pourrait sinon
+-- se declarer administrateur depuis la page d'inscription. Un administrateur
+-- active le compte et fixe le role depuis Parametres > Utilisateurs.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -111,18 +116,15 @@ declare
   v_role     public.user_role;
 begin
   select count(*) = 0 into v_is_first from public.profiles;
-  v_role := case
-              when v_is_first then 'admin'::public.user_role
-              when new.raw_user_meta_data ->> 'role' in ('admin','gerant','caissier')
-                then (new.raw_user_meta_data ->> 'role')::public.user_role
-              else 'caissier'::public.user_role
-            end;
+  v_role := case when v_is_first then 'admin'::public.user_role
+                 else 'caissier'::public.user_role end;
 
-  insert into public.profiles (id, email, full_name, role)
+  insert into public.profiles (id, email, full_name, role, active)
   values (new.id,
           coalesce(new.email, ''),
           coalesce(new.raw_user_meta_data ->> 'full_name', split_part(coalesce(new.email,''), '@', 1)),
-          v_role)
+          v_role,
+          v_is_first)          -- seul le premier compte est actif d'emblee
   on conflict (id) do nothing;
   return new;
 end $$;
@@ -264,6 +266,10 @@ language plpgsql security definer set search_path = public
 as $$
 declare v_prefix text; v_num bigint; v_pad smallint;
 begin
+  if not public.is_manager() then
+    raise exception 'Droits insuffisants pour generer un code produit.';
+  end if;
+
   update public.app_settings
      set internal_code_next = internal_code_next + 1
    where id = 1
@@ -1348,16 +1354,69 @@ select il.id, il.session_id, il.product_id, il.theoretical_qty, il.counted_qty,
   left join public.categories c on c.id = p.category_id;
 alter view public.v_inventory_lines_full set (security_invoker = on);
 
+-- 13.12 CATALOGUE DE LA CAISSE (sans aucun cout)
+--
+--  Cette vue et la suivante sont les SEULES a ne pas etre « security_invoker » :
+--  elles traversent volontairement la securite par ligne pour exposer, au
+--  caissier, un sous-ensemble de colonnes d'ou tout prix d'achat et toute marge
+--  ont ete retires. Le garde-fou `public.is_staff()` les vide pour quiconque
+--  n'est pas un utilisateur actif de la boutique.
+create or replace view public.v_pos_catalog as
+select p.id,
+       p.name,
+       p.category_id,
+       c.label        as category_label,
+       c.code         as category_code,
+       p.appellation,
+       p.vintage,
+       p.volume_ml,
+       p.sale_price_ttc,
+       p.vat_rate,
+       p.barcode,
+       p.internal_code,
+       p.unit,
+       p.pack_size,
+       p.photo_url,
+       p.active,
+       p.stock_alert_threshold,
+       coalesce(sl.total_stock, 0)                            as total_stock,
+       coalesce(sl.total_stock, 0) <= p.stock_alert_threshold as is_low_stock
+  from public.products p
+  left join public.categories c on c.id = p.category_id
+  left join (select product_id, sum(quantity) as total_stock
+               from public.stock_levels group by product_id) sl on sl.product_id = p.id
+ where p.active
+   and public.is_staff();
+
+-- 13.13 LIGNES DE VENTE VISIBLES PAR LE CAISSIER (sans cout ni marge)
+--  Permet de reafficher et de reimprimer ses propres tickets sans exposer
+--  unit_cost_ht. Un gerant voit en plus toutes les ventes.
+create or replace view public.v_sale_items_safe as
+select si.id, si.sale_id, si.product_id, si.label, si.quantity, si.pack_size, si.unit,
+       si.unit_price_ttc, si.vat_rate, si.discount_type, si.discount_value,
+       si.line_discount, si.line_ttc, si.line_ht, si.line_vat, si.position
+  from public.sale_items si
+  join public.sales s on s.id = si.sale_id
+ where public.is_staff()
+   and (s.user_id = auth.uid() or public.is_manager());
+
 -- ---------------------------------------------------------------------
 -- 14. GARDE-FOUS SUR LES PROFILS
 -- ---------------------------------------------------------------------
 -- Un utilisateur peut modifier son nom, mais seul un admin peut changer
 -- un role ou desactiver un compte.
+--
+-- ISSUE DE SECOURS : quand auth.uid() est nul, la requete ne vient pas de
+-- l'application mais de l'editeur SQL de Supabase ou d'une cle service_role,
+-- c'est-a-dire du proprietaire du projet. Sans cette exception, un patron qui
+-- se retrouverait sans compte administrateur actif n'aurait plus aucun moyen
+-- de reprendre la main sur sa propre boutique.
 create or replace function public.profiles_guard()
 returns trigger language plpgsql security definer set search_path = public
 as $$
 begin
   if (old.role is distinct from new.role or old.active is distinct from new.active)
+     and auth.uid() is not null
      and not public.is_admin() then
     raise exception 'Seul un administrateur peut modifier un role ou desactiver un compte.';
   end if;
@@ -1447,8 +1506,10 @@ create policy customers_update on public.customers for update to authenticated
   using (public.is_staff()) with check (public.is_staff());
 create policy customers_delete on public.customers for delete to authenticated using (public.is_manager());
 
--- 15.5 Produits : lecture pour tous (necessaire a la caisse), ecriture gerant/admin
-create policy products_select on public.products for select to authenticated using (public.is_staff());
+-- 15.5 Produits : la table porte les PRIX D'ACHAT et les marges. Sa lecture est
+--      donc reservee aux gerants et administrateurs. La caisse passe par la vue
+--      v_pos_catalog (section 13.12), qui n'expose aucun cout.
+create policy products_select on public.products for select to authenticated using (public.is_manager());
 create policy products_insert on public.products for insert to authenticated with check (public.is_manager());
 create policy products_update on public.products for update to authenticated
   using (public.is_manager()) with check (public.is_manager());
@@ -1457,7 +1518,8 @@ create policy products_delete on public.products for delete to authenticated usi
 -- 15.6 Stock : lecture pour tous ; aucune ecriture directe (uniquement via les
 --      fonctions record_movement / transfer_stock / pos_create_sale).
 create policy stock_levels_select on public.stock_levels for select to authenticated using (public.is_staff());
-create policy movements_select    on public.stock_movements for select to authenticated using (public.is_staff());
+-- Les mouvements portent unit_cost_ht : lecture reservee aux gerants.
+create policy movements_select    on public.stock_movements for select to authenticated using (public.is_manager());
 create policy movements_insert    on public.stock_movements for insert to authenticated with check (public.is_manager());
 
 -- 15.7 Receptions : gerant/admin
@@ -1481,9 +1543,10 @@ create policy cash_sessions_update on public.cash_sessions for update to authent
 -- 15.10 Ventes : insertion uniquement via la RPC pos_create_sale (SECURITY DEFINER).
 create policy sales_select on public.sales for select to authenticated
   using (user_id = auth.uid() or public.is_manager());
+-- Les lignes de vente portent unit_cost_ht (cout d'achat figé) : la table est
+-- reservee aux gerants. Le caissier consulte ses tickets via v_sale_items_safe.
 create policy sale_items_select on public.sale_items for select to authenticated
-  using (exists (select 1 from public.sales s
-                  where s.id = sale_id and (s.user_id = auth.uid() or public.is_manager())));
+  using (public.is_manager());
 create policy payments_select on public.payments for select to authenticated
   using (exists (select 1 from public.sales s
                   where s.id = sale_id and (s.user_id = auth.uid() or public.is_manager())));
@@ -1497,6 +1560,9 @@ create policy returns_select on public.sale_returns for select to authenticated
 grant usage on schema public to anon, authenticated;
 
 grant select on all tables in schema public to authenticated;
+-- Les deux vues « sans cout » sont les seules portes d'entree du caissier
+-- vers le catalogue et vers ses tickets.
+grant select on public.v_pos_catalog, public.v_sale_items_safe to authenticated;
 grant insert, update, delete on
   public.categories, public.locations, public.suppliers, public.customers,
   public.products, public.receptions, public.reception_lines,
@@ -1526,7 +1592,9 @@ grant execute on function public.cancel_sale(uuid, text)  to authenticated;
 grant execute on function public.return_sale_item(uuid, numeric, text) to authenticated;
 grant execute on function public.report_tz()             to authenticated;
 
-revoke execute on function public.log_audit(text, text, text, jsonb) from authenticated, anon;
+-- PostgreSQL accorde EXECUTE a PUBLIC par defaut : sans ce revoke, n'importe
+-- quel utilisateur connecte pourrait forger des entrees dans le journal d'audit.
+revoke execute on function public.log_audit(text, text, text, jsonb) from public, authenticated, anon;
 
 -- ---------------------------------------------------------------------
 -- 17. STOCKAGE DES PHOTOS DE PRODUITS (Supabase Storage)

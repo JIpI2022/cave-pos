@@ -104,7 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         )
       } else if (!data.active) {
         setProfile(null)
-        setProfileError('Votre compte a ete desactive. Contactez un administrateur.')
+        setProfileError(
+          "Votre compte n'est pas encore actif. Par securite, tout nouveau compte "
+          + "doit etre active par un administrateur (Parametres > Utilisateurs et roles), "
+          + "qui vous attribuera en meme temps votre role.",
+        )
       } else {
         setProfile(data as Profile)
         setProfileError(null)

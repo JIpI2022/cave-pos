@@ -9,7 +9,7 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { DiscountType, ProductFull } from '@/types/database'
+import type { DiscountType, PosProduct } from '@/types/database'
 import { computeSale, type SaleTotals } from '@/lib/calc'
 
 export interface CartLine {
@@ -26,9 +26,12 @@ export interface CartLine {
   unit: string
   discountType: DiscountType
   discountValue: number
-  /** Prix d achat HT figé (calcul de marge). */
-  purchasePriceHt: number
-  /** Stock connu au moment de l ajout (alerte visuelle de stock insuffisant). */
+  /**
+   * Stock connu au moment de l ajout (alerte visuelle de stock insuffisant).
+   * Le panier ne contient volontairement AUCUN prix d achat : il est conserve
+   * dans le stockage local du navigateur, et la marge n a rien a y faire.
+   * Le serveur fige lui-meme le cout a l enregistrement de la vente.
+   */
   knownStock: number
 }
 
@@ -39,7 +42,7 @@ interface CartState {
   customerId: string | null
   note: string
 
-  addProduct: (product: ProductFull, options?: { asPack?: boolean; quantity?: number }) => void
+  addProduct: (product: PosProduct, options?: { asPack?: boolean; quantity?: number }) => void
   addFreeLine: (label: string, unitPriceTtc: number, vatRate: number) => void
   changeQuantity: (key: string, delta: number) => void
   setQuantity: (key: string, quantity: number) => void
@@ -94,7 +97,6 @@ export const useCart = create<CartState>()(
           unit: asPack ? `carton de ${packSize}` : 'bouteille',
           discountType: 'aucune',
           discountValue: 0,
-          purchasePriceHt: Number(product.purchase_price_ht),
           knownStock: Number(product.total_stock ?? 0),
         }
         return { lines: [...state.lines, line] }
@@ -104,7 +106,7 @@ export const useCart = create<CartState>()(
         lines: [...state.lines, {
           key: newKey(), productId: null, label, unitPriceTtc, vatRate,
           quantity: 1, packSize: 1, unit: 'unite',
-          discountType: 'aucune', discountValue: 0, purchasePriceHt: 0, knownStock: 0,
+          discountType: 'aucune', discountValue: 0, knownStock: 0,
         }],
       })),
 

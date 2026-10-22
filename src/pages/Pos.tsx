@@ -34,7 +34,7 @@ import { enqueueSale, markFailed, markSynced, newClientUuid } from '@/lib/offlin
 import { formatMoney, formatQty, formatVolume, parseNumber } from '@/lib/format'
 import type { TicketData } from '@/lib/pdf'
 import type {
-  CashSession, Customer, DiscountType, ProductFull, Sale, SalePayload, SalePayloadPayment,
+  CashSession, Customer, DiscountType, PosProduct, Sale, SalePayload, SalePayloadPayment,
 } from '@/types/database'
 
 export default function Pos() {
@@ -416,7 +416,7 @@ function CategoryChips({ value, onChange }: { value: string; onChange: (v: strin
 function ProductTile({
   product, currency, onAdd,
 }: {
-  product: ProductFull
+  product: PosProduct
   currency: { symbol: string; decimals: number; code: string }
   onAdd: (asPack: boolean) => void
 }) {
@@ -752,7 +752,7 @@ function UnknownCodeDialog({
   code: string | null
   canCreate: boolean
   onClose: () => void
-  onCreated: (product: ProductFull) => void
+  onCreated: (product: PosProduct) => void
   defaultVat: number
 }) {
   const [formOpen, setFormOpen] = useState(false)
@@ -796,13 +796,28 @@ function UnknownCodeDialog({
         prefillBarcode={code ?? ''}
         onClose={() => { setFormOpen(false); onClose() }}
         onSaved={(product) => {
-          // On reconstruit la forme « enrichie » attendue par le panier.
+          // On reconstruit la forme attendue par la caisse, sans aucun cout :
+          // le catalogue sera de toute facon recharge depuis v_pos_catalog.
           onCreated({
-            ...product,
-            category_label: null, category_code: null, supplier_name: null,
-            total_stock: 0, is_low_stock: true, stock_value_ht: 0,
-            sale_price_ht: Number(product.sale_price_ttc) / (1 + (product.vat_rate ?? defaultVat) / 100),
-            unit_margin_ht: 0,
+            id: product.id,
+            name: product.name,
+            category_id: product.category_id,
+            category_label: null,
+            category_code: null,
+            appellation: product.appellation,
+            vintage: product.vintage,
+            volume_ml: product.volume_ml,
+            sale_price_ttc: Number(product.sale_price_ttc),
+            vat_rate: Number(product.vat_rate ?? defaultVat),
+            barcode: product.barcode,
+            internal_code: product.internal_code,
+            unit: product.unit,
+            pack_size: product.pack_size,
+            photo_url: product.photo_url,
+            active: product.active,
+            stock_alert_threshold: product.stock_alert_threshold,
+            total_stock: 0,
+            is_low_stock: true,
           })
         }}
       />

@@ -116,7 +116,11 @@ export default function ProductForm({
     setUploading(true)
     setError(null)
     try {
-      const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+      // L'extension vient du nom de fichier choisi par l'utilisateur : on la
+      // reduit a des caracteres inoffensifs pour qu'aucun chemin ne puisse etre
+      // fabrique (« ../ ») dans la cle de stockage.
+      const rawExt = file.name.split('.').pop()?.toLowerCase() ?? ''
+      const ext = /^[a-z0-9]{1,5}$/.test(rawExt) ? rawExt : 'jpg'
       const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
       const { error: upErr } = await supabase.storage.from('produits').upload(path, file, {
         cacheControl: '31536000', upsert: false,

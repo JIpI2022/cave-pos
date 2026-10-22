@@ -11,40 +11,41 @@ import { supabase } from '@/lib/supabase'
 import { cacheGet, cacheSet } from '@/lib/offline'
 import { normalizeScan } from '@/lib/barcode'
 import { searchKey } from '@/lib/format'
-import type { ProductFull } from '@/types/database'
+import type { PosProduct } from '@/types/database'
 
 export interface CatalogState {
-  products: ProductFull[]
+  products: PosProduct[]
   loading: boolean
   /** Vrai si les donnees affichees viennent du cache local. */
   fromCache: boolean
   cachedAt: string | null
   reload: () => Promise<void>
-  findByCode: (code: string) => ProductFull | null
-  search: (text: string, limit?: number) => ProductFull[]
+  findByCode: (code: string) => PosProduct | null
+  search: (text: string, limit?: number) => PosProduct[]
 }
 
 export function useCatalog(): CatalogState {
-  const [products, setProducts] = useState<ProductFull[]>([])
+  const [products, setProducts] = useState<PosProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [fromCache, setFromCache] = useState(false)
   const [cachedAt, setCachedAt] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     setLoading(true)
+    // v_pos_catalog n'expose NI prix d'achat NI marge : meme en interrogeant
+    // l'API directement, un caissier ne peut pas lire les couts.
     const { data, error } = await supabase
-      .from('v_products_full')
+      .from('v_pos_catalog')
       .select('*')
-      .eq('active', true)
       .order('name')
 
     if (!error && data) {
-      setProducts(data as ProductFull[])
+      setProducts(data as PosProduct[])
       setFromCache(false)
       setCachedAt(new Date().toISOString())
       await cacheSet('catalogue', data)
     } else {
-      const cached = await cacheGet<ProductFull[]>('catalogue')
+      const cached = await cacheGet<PosProduct[]>('catalogue')
       if (cached) {
         setProducts(cached.data)
         setFromCache(true)
@@ -56,7 +57,7 @@ export function useCatalog(): CatalogState {
 
   useEffect(() => { void reload() }, [reload])
 
-  const findByCode = useCallback((code: string): ProductFull | null => {
+  const findByCode = useCallback((code: string): PosProduct | null => {
     const normalized = normalizeScan(code)
     if (!normalized) return null
     const upper = normalized.toUpperCase()
@@ -65,7 +66,7 @@ export function useCatalog(): CatalogState {
     ) ?? null
   }, [products])
 
-  const search = useCallback((text: string, limit = 60): ProductFull[] => {
+  const search = useCallback((text: string, limit = 60): PosProduct[] => {
     const key = searchKey(text)
     if (!key) return products.slice(0, limit)
     return products

@@ -338,6 +338,74 @@ Ces règles sont appliquées **par la base de données** (politiques *Row Level
 Security*), pas seulement par l'interface : même en manipulant l'application, un
 caissier ne peut pas lire les marges ni modifier le stock.
 
+### Ce que la base refuse, pas seulement l'interface
+
+Les restrictions sont écrites dans PostgreSQL (politiques *Row Level Security*).
+Un employé qui interrogerait l'API directement, sans passer par l'application,
+se heurte exactement aux mêmes murs. Le fichier
+[`supabase/tests/securite.sql`](supabase/tests/securite.sql) rejoue ces
+tentatives et affiche `OK` ou `ECHEC` pour chacune — vous pouvez le lancer sur
+une base de démonstration pour le vérifier vous-même.
+
+Ce qu'un **caissier** ne peut pas obtenir, même en contournant l'interface :
+
+| Il tente de lire… | Résultat |
+|---|---|
+| Les prix d'achat (`products`) | refusé |
+| Les marges (`v_products_full`) | refusé |
+| La valeur du stock | refusé |
+| Les mouvements de stock (ils portent le coût unitaire) | refusé |
+| Les lignes de vente (coût d'achat figé) | refusé |
+| Le journal d'audit | refusé |
+| Les ventes des autres caissiers | refusé |
+| Le catalogue de vente (`v_pos_catalog`) | **autorisé** — sans aucun coût |
+
+La caisse passe par une vue dédiée, `v_pos_catalog`, amputée de toute donnée de
+coût. C'est volontairement la seule porte d'entrée du caissier vers le catalogue.
+
+De même, il ne peut ni modifier un prix, ni saisir un mouvement de stock, ni
+générer un code produit, ni annuler une vente, ni écrire dans le journal d'audit.
+
+### Deux protections à connaître
+
+**1. Le rôle ne s'auto-attribue pas.** Les informations saisies à l'inscription
+sont choisies librement par la personne qui s'inscrit. Elles ne décident donc
+jamais du rôle : seul le **tout premier** compte devient administrateur, tous
+les autres arrivent en « caissier ».
+
+**2. Tout nouveau compte est INACTIF.** Un compte qui vient d'être créé ne voit
+rien et ne peut rien faire tant qu'un administrateur ne l'a pas activé dans
+**Paramètres → Utilisateurs et rôles** (les comptes en attente apparaissent en
+tête de liste, signalés en orange). C'est la protection essentielle si l'adresse
+de votre application venait à circuler : un inconnu peut créer un compte, il
+reste devant une porte close.
+
+> Vous pouvez aussi fermer complètement les inscriptions :
+> Supabase → `Authentication` → `Sign Ups` → désactiver, puis créer les comptes
+> vous-même depuis `Authentication` → `Users`.
+
+**En cas de verrouillage** — si vous n'aviez plus aucun compte administrateur
+actif — l'éditeur SQL de Supabase reste une porte de secours, réservée au
+propriétaire du projet :
+
+```sql
+update public.profiles set role = 'admin', active = true
+ where email = 'votre.adresse@exemple.com';
+```
+
+### Bonnes pratiques
+
+- **Ne publiez jamais la clé `sb_secret_…`** (ou `service_role`) : elle contourne
+  toutes les protections ci-dessus. Seule la clé *publishable* / `anon` va dans
+  l'application — elle est conçue pour être publique, la sécurité reposant sur
+  les politiques RLS.
+- **Un compte par personne.** Les annulations, remises et ajustements sont tracés
+  nominativement ; un compte partagé rend le journal d'audit inutile.
+- **Désactivez plutôt que supprimer** un compte qui quitte l'entreprise :
+  son historique reste lisible.
+- Activez la **double authentification** sur vos comptes GitHub et Supabase :
+  ce sont eux qui protègent l'ensemble.
+
 **Journal d'audit** — les opérations sensibles sont enregistrées automatiquement
 et ne peuvent être ni modifiées ni supprimées : modification de prix, suppression
 de produit, annulation de vente, retour d'article, casse, ajustement de stock,

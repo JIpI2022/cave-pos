@@ -119,6 +119,36 @@ export interface ProductFull extends Product {
   unit_margin_ht: number
 }
 
+/**
+ * Vue v_pos_catalog : ce que la caisse voit du catalogue.
+ * Volontairement AMPUTEE des prix d'achat et des marges : un caissier n'y a
+ * pas acces, ni par l'interface ni par l'API.
+ */
+export interface PosProduct {
+  id: string
+  name: string
+  category_id: string | null
+  category_label: string | null
+  category_code: string | null
+  appellation: string
+  vintage: number | null
+  volume_ml: number | null
+  sale_price_ttc: number
+  vat_rate: number
+  barcode: string | null
+  internal_code: string | null
+  unit: ProductUnit
+  pack_size: number
+  photo_url: string
+  active: boolean
+  stock_alert_threshold: number
+  total_stock: number
+  is_low_stock: boolean
+}
+
+/** Vue v_sale_items_safe : lignes de vente sans le cout d'achat figé. */
+export type SaleItemSafe = Omit<SaleItem, 'unit_cost_ht'>
+
 export interface StockLevel {
   product_id: string
   location_id: string

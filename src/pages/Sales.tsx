@@ -21,7 +21,7 @@ import {
 } from '@/lib/format'
 import { downloadCsv, downloadXlsx, stampedFilename, ticketFilename, type ExportColumn } from '@/lib/exports'
 import { downloadTicketPdf, printTicketPdf, type TicketData } from '@/lib/pdf'
-import type { Payment, Sale, SaleItem, SaleReturn } from '@/types/database'
+import type { Payment, Sale, SaleItemSafe, SaleReturn } from '@/types/database'
 
 interface SaleRow extends Sale {
   payments: Payment[]
@@ -179,12 +179,12 @@ function SaleDetail({
   settings: Parameters<typeof downloadTicketPdf>[1]
 }) {
   const { currency } = useSettings()
-  const [items, setItems] = useState<SaleItem[]>([])
+  const [items, setItems] = useState<SaleItemSafe[]>([])
   const [returns, setReturns] = useState<SaleReturn[]>([])
   const [loading, setLoading] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
-  const [returnItem, setReturnItem] = useState<SaleItem | null>(null)
+  const [returnItem, setReturnItem] = useState<SaleItemSafe | null>(null)
   const [returnQty, setReturnQty] = useState('1')
   const [returnReason, setReturnReason] = useState('')
   const [busy, setBusy] = useState(false)
@@ -195,10 +195,13 @@ function SaleDetail({
     setLoading(true)
     setError(null)
     void Promise.all([
-      supabase.from('sale_items').select('*').eq('sale_id', sale.id).order('position'),
+      // v_sale_items_safe : memes lignes, sans le cout d'achat figé, afin
+      // qu'un caissier puisse relire et reimprimer ses tickets sans acceder
+      // aux marges.
+      supabase.from('v_sale_items_safe').select('*').eq('sale_id', sale.id).order('position'),
       supabase.from('sale_returns').select('*').eq('sale_id', sale.id).order('created_at'),
     ]).then(([it, rt]) => {
-      setItems((it.data ?? []) as SaleItem[])
+      setItems((it.data ?? []) as SaleItemSafe[])
       setReturns((rt.data ?? []) as SaleReturn[])
       setLoading(false)
     })

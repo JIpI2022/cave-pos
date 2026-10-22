@@ -232,7 +232,9 @@ function UsersTab() {
   const load = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase.from('profiles').select('*').order('email')
-    setRows((data ?? []) as Profile[])
+    // Les comptes en attente d'activation passent en tete de liste.
+    const list = (data ?? []) as Profile[]
+    setRows([...list].sort((a, b) => Number(a.active) - Number(b.active)))
     setLoading(false)
   }, [])
 
@@ -247,17 +249,26 @@ function UsersTab() {
   async function toggleActive(p: Profile) {
     const { error } = await supabase.from('profiles').update({ active: !p.active }).eq('id', p.id)
     if (error) toast.error(describeError(error))
-    else { toast.success(p.active ? 'Compte desactive.' : 'Compte reactive.'); void load() }
+    else { toast.success(p.active ? 'Compte desactive.' : 'Compte active.'); void load() }
   }
 
   return (
     <div className="space-y-3">
       <Alert kind="info">
-        Les comptes se creent depuis l ecran de connexion (« Creer un compte ») ou
-        depuis Supabase &gt; Authentication &gt; Users. Le tout premier compte cree
-        devient administrateur ; les suivants arrivent avec le role « caissier »,
-        a ajuster ici.
+        Les comptes se creent depuis l ecran de connexion (« Creer un compte »).
+        Le tout premier compte cree devient administrateur et actif. <b>Tous les
+        suivants arrivent « caissier » et INACTIFS</b> : tant que vous ne les
+        activez pas ici, ils ne peuvent rien voir ni rien faire. C est ce qui
+        protege votre boutique si l adresse de l application venait a circuler.
       </Alert>
+
+      {rows.some((p) => !p.active) && (
+        <Alert kind="warning">
+          {rows.filter((p) => !p.active).length} compte(s) en attente d activation
+          (en haut de la liste). Verifiez qu il s agit bien de vos employes avant
+          de les activer.
+        </Alert>
+      )}
 
       <div className="card">
         {loading ? <Spinner /> : rows.length === 0 ? (
@@ -283,13 +294,19 @@ function UsersTab() {
                   </Select>
                 </td>
                 <td className="td">
-                  {p.active ? <Badge color="green">actif</Badge> : <Badge color="red">desactive</Badge>}
+                  {p.active
+                    ? <Badge color="green">actif</Badge>
+                    : <Badge color="amber">en attente d activation</Badge>}
                 </td>
                 <td className="td text-xs text-slate-500">{formatDateTime(p.created_at)}</td>
                 <td className="td">
                   {p.id !== me?.id && (
-                    <Button variant="ghost" icon={ShieldCheck} onClick={() => void toggleActive(p)}>
-                      {p.active ? 'Desactiver' : 'Reactiver'}
+                    <Button
+                      variant={p.active ? 'ghost' : 'primary'}
+                      icon={ShieldCheck}
+                      onClick={() => void toggleActive(p)}
+                    >
+                      {p.active ? 'Desactiver' : 'Activer'}
                     </Button>
                   )}
                 </td>
