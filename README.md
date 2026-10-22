@@ -186,6 +186,9 @@ rôle du déclencheur `handle_new_user` installé par `schema.sql`). Deux métho
 
 ### Étape 5 — Activer GitHub Pages
 
+Le workflow tente d'activer GitHub Pages tout seul au premier déploiement.
+Si cela échoue (message *Get Pages site failed*), activez-le à la main :
+
 1. **Settings** → menu de gauche **Pages**.
 2. Rubrique **Build and deployment** → **Source** : choisissez
    **GitHub Actions** (et non « Deploy from a branch »).
