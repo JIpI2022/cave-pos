@@ -1,7 +1,10 @@
 -- =====================================================================
 --  CAVE & CAISSE - Donnees de demonstration
 --  A executer APRES supabase/schema.sql (Supabase > SQL Editor).
---  Rejouable : les insertions sont idempotentes (on conflict do nothing).
+--  Rejouable autant de fois qu'on veut : les insertions evitent les doublons,
+--  les prix de demonstration sont mis a jour, et les recherches de fournisseur
+--  ou de categorie tolerent des doublons deja presents en base (sequelle d'une
+--  version anterieure de ce fichier).
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
@@ -148,9 +151,9 @@ insert into public.products
   (name, category_id, appellation, vintage, volume_ml, supplier_id,
    purchase_price_ht, sale_price_ttc, vat_rate, unit, stock_alert_threshold)
 select 'Cuvee du Patron (vrac)',
-       (select id from public.categories where code = 'vin_rouge'),
+       (select id from public.categories where code = 'vin_rouge' order by id limit 1),
        'Vin de France', 2023, 1000,
-       (select id from public.suppliers where name = 'Domaines & Terroirs'),
+       (select id from public.suppliers where name = 'Domaines & Terroirs' order by id limit 1),
        1375, 3200, 20.00, 'bouteille', 24
 where not exists (select 1 from public.products where name = 'Cuvee du Patron (vrac)');
 
@@ -178,7 +181,7 @@ select p.id, l.id, 'entree',
 insert into public.stock_movements
   (product_id, location_id, type, quantity_delta, reason, reference)
 select p.id,
-       (select id from public.locations where code = 'BOUTIQUE'),
+       (select id from public.locations where code = 'BOUTIQUE' order by id limit 1),
        'casse', -52, 'Casse palette (demonstration)', 'SEED-CASSE'
   from public.products p
  where p.name in ('Condrieu Viognier', 'Champagne Blanc de Blancs')
