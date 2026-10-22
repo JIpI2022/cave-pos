@@ -3,10 +3,22 @@
 --  visiteur qui vient de s'inscrire, et on tente d'acceder a ce qui
 --  doit leur etre interdit.
 --
---  A executer sur une base de DEMONSTRATION, apres schema.sql et seed.sql.
---  Chaque ligne « ATTENDU » indique le resultat correct.
+--  A executer apres schema.sql et seed.sql.
+--
+--  Le script est SANS EFFET DURABLE : il cree un compte d'essai
+--  (pirate@exemple.com), tente les intrusions, puis le supprime — y compris
+--  si une etape se passe mal, le nettoyage ayant lieu au debut ET a la fin.
+--  Il ne provoque jamais d'erreur : chaque refus attendu est capture et
+--  rapporte comme « OK (refuse) ». Il fonctionne donc aussi bien dans
+--  l'editeur SQL de Supabase qu'en ligne de commande.
+--
+--  Il cree neanmoins de vraies ventes via smoke.sql si vous l'enchainez :
+--  reservez-le a une base de demonstration ou a un projet encore vierge.
 -- =====================================================================
-\set ON_ERROR_STOP off
+
+-- Nettoyage prealable : efface la trace d'une execution precedente
+-- qui se serait interrompue.
+delete from auth.users where email = 'pirate@exemple.com';
 
 select '=== 1. INSCRIPTION : un visiteur peut-il se declarer administrateur ? ===' as etape;
 -- Sur Supabase, les metadonnees d'inscription sont choisies par le client :
@@ -72,25 +84,67 @@ select 'ventes des autres caissiers', count(*)::text,
   from public.sales;
 
 select '=== 4. ECRITURES INTERDITES AU CAISSIER ===' as etape;
--- Chaque instruction doit echouer ou ne rien modifier.
-update public.products set sale_price_ttc = 1 where true;
-select 'modification de prix' as tentative,
-       case when (select count(*) from public.products where sale_price_ttc = 1) = 0
-            then 'OK (aucune ligne modifiee)' else 'ECHEC' end as verdict;
 
-insert into public.stock_movements (product_id, location_id, type, quantity_delta, reason)
-select id, (select id from public.locations limit 1), 'entree', 999, 'vol'
-  from public.products limit 1;
--- ATTENDU : ERROR (violation de la politique de securite) ou 0 ligne
+-- Chaque tentative est executee dans un bloc qui capture le refus : le
+-- script rapporte le resultat au lieu de s'interrompre.
+do $$
+declare
+  v_verdict text;
+  v_produit uuid;
+  v_emplacement uuid;
+  v_vente uuid;
+begin
+  create temporary table if not exists resultats_intrusion(tentative text, verdict text);
+  delete from resultats_intrusion;
 
-select public.next_internal_code();
--- ATTENDU : ERROR « Droits insuffisants »
+  -- a) Modifier un prix de vente
+  begin
+    update public.products set sale_price_ttc = 1 where true;
+    v_verdict := case when (select count(*) from public.products where sale_price_ttc = 1) = 0
+                      then 'OK (aucune ligne modifiee)'
+                      else 'ECHEC : le caissier a modifie des prix' end;
+  exception when others then v_verdict := 'OK (refuse : ' || left(sqlerrm, 40) || ')';
+  end;
+  insert into resultats_intrusion values ('modifier un prix de vente', v_verdict);
 
-select public.log_audit('faux', 'profiles', 'x');
--- ATTENDU : ERROR « permission denied »
+  -- b) Saisir un mouvement de stock
+  select id into v_produit from public.products limit 1;
+  select id into v_emplacement from public.locations limit 1;
+  begin
+    insert into public.stock_movements (product_id, location_id, type, quantity_delta, reason)
+    values (v_produit, v_emplacement, 'entree', 999, 'tentative');
+    v_verdict := 'ECHEC : le caissier a cree un mouvement de stock';
+  exception when others then v_verdict := 'OK (refuse)';
+  end;
+  insert into resultats_intrusion values ('creer un mouvement de stock', v_verdict);
 
-select public.cancel_sale((select id from public.sales limit 1), 'tentative');
--- ATTENDU : ERROR « Seul un gerant ou un administrateur... »
+  -- c) Generer un code produit
+  begin
+    perform public.next_internal_code();
+    v_verdict := 'ECHEC : le caissier a consomme un code produit';
+  exception when others then v_verdict := 'OK (refuse)';
+  end;
+  insert into resultats_intrusion values ('generer un code produit', v_verdict);
+
+  -- d) Ecrire dans le journal d'audit
+  begin
+    perform public.log_audit('faux', 'profiles', 'x');
+    v_verdict := 'ECHEC : le journal d audit est falsifiable';
+  exception when others then v_verdict := 'OK (refuse)';
+  end;
+  insert into resultats_intrusion values ('falsifier le journal d audit', v_verdict);
+
+  -- e) Annuler une vente
+  select id into v_vente from public.sales limit 1;
+  begin
+    perform public.cancel_sale(v_vente, 'tentative');
+    v_verdict := 'ECHEC : le caissier a annule une vente';
+  exception when others then v_verdict := 'OK (refuse)';
+  end;
+  insert into resultats_intrusion values ('annuler une vente', v_verdict);
+end $$;
+
+select tentative, verdict from resultats_intrusion;
 
 reset role;
 
@@ -108,6 +162,12 @@ select 'mouvements', count(*)::text,
   from public.stock_movements;
 reset role;
 
--- Nettoyage
+-- Nettoyage : le compte d'essai ne doit laisser aucune trace
 delete from auth.users where email = 'pirate@exemple.com';
+drop table if exists resultats_intrusion;
+
+select case when exists (select 1 from public.profiles where email = 'pirate@exemple.com')
+            then 'ECHEC : le compte d essai n a pas ete supprime'
+            else 'OK : aucune trace laissee par ce test' end as nettoyage;
+
 select '=== FIN ===' as etape;

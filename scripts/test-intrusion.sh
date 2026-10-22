@@ -40,18 +40,27 @@ fi
 
 # Les REFUS attendus doivent apparaitre : sans cela, une regression qui
 # ouvrirait les droits passerait inapercue (plus d'erreur = plus de refus).
-while IFS= read -r motif; do
-  [ -z "$motif" ] && continue
-  if ! grep -qF "$motif" "$SORTIE"; then
-    echo "✗ Refus attendu absent : « $motif »"
-    echo "   Une protection a disparu : l'operation est devenue possible."
+# L'alignement des colonnes varie : on compare sans tenir compte des espaces.
+while IFS= read -r tentative; do
+  [ -z "$tentative" ] && continue
+  if ! grep -qE "$tentative +\| OK" "$SORTIE"; then
+    echo "✗ Tentative non rapportee comme refusee : « $tentative »"
+    echo "   Une protection a disparu, ou le scenario ne s'est pas deroule."
     echec=1
   fi
 done <<'MOTIFS'
-Droits insuffisants pour generer un code produit
-permission denied for function log_audit
-Seul un gerant ou un administrateur peut annuler une vente
+modifier un prix de vente
+creer un mouvement de stock
+generer un code produit
+falsifier le journal d audit
+annuler une vente
 MOTIFS
+
+# Le compte d'essai ne doit laisser aucune trace
+if ! grep -q "OK : aucune trace laissee par ce test" "$SORTIE"; then
+  echo "✗ Le compte d'essai pirate@exemple.com n'a pas ete supprime."
+  echec=1
+fi
 
 nb_ok=$(grep -c "OK" "$SORTIE" || true)
 echo "→ $nb_ok controle(s) au vert dans le scenario d'intrusion"
