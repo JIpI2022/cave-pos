@@ -115,7 +115,8 @@ export default function TicketDialog({
           {data.payments.map((p, i) => (
             <div key={i}>
               <div className="flex justify-between">
-                <span>{PAYMENT_LABELS[p.method]}</span><span>{formatMoney(p.amount, currency)}</span>
+                <span>{p.operator || PAYMENT_LABELS[p.method]}</span>
+                <span>{formatMoney(p.amount, currency)}</span>
               </div>
               {p.tendered ? (
                 <>

@@ -31,6 +31,8 @@ export interface AppSettings {
   ticket_footer: string
   ticket_prefix: string
   low_stock_default: number
+  /** Operateurs de paiement mobile proposes en caisse. */
+  mobile_money_operators: string[]
   updated_at: string
 }
 
@@ -248,6 +250,8 @@ export interface CashSessionReport extends CashSession {
   total_mobile_money: number
   total_retours: number
   nb_annulations: number
+  /** Detail du mobile money par operateur, pour rapprocher chaque compte. */
+  mobile_money_detail: { operateur: string | null; total: number }[]
 }
 
 export interface Sale {
@@ -299,6 +303,8 @@ export interface Payment {
   tendered: number | null
   change_given: number
   reference: string
+  /** Operateur mobile money (Orange Money, Wave...). Vide sinon. */
+  operator: string
   created_at: string
 }
 
@@ -354,6 +360,8 @@ export interface TopProduct {
 export interface PaymentBreakdown {
   sale_date: string
   method: PaymentMethod
+  /** Operateur mobile money ; vide ou null pour les especes et la carte. */
+  operator: string | null
   nb_paiements: number
   total: number
   cash_session_id: string | null
@@ -417,6 +425,7 @@ export interface SalePayloadPayment {
   tendered?: number | null
   change_given?: number
   reference?: string
+  operator?: string
 }
 
 export interface SalePayload {

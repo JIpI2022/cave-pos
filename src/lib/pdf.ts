@@ -65,7 +65,10 @@ export function pickBarcodeFormat(code: string): 'CODE128' | 'EAN13' | 'EAN8' {
 export interface TicketData {
   sale: Pick<Sale, 'ticket_ref' | 'created_at' | 'total_ht' | 'total_vat' | 'total_ttc' | 'discount_total' | 'status'>
   items: Pick<SaleItem, 'label' | 'quantity' | 'unit_price_ttc' | 'line_ttc' | 'line_discount' | 'vat_rate' | 'unit' | 'pack_size'>[]
-  payments: Pick<Payment, 'method' | 'amount' | 'tendered' | 'change_given'>[]
+  // `operator` nomme l operateur mobile money (Orange Money, Wave...) ;
+  // il remplace le libelle generique sur le ticket.
+  payments: (Pick<Payment, 'method' | 'amount' | 'tendered' | 'change_given'>
+    & { operator?: string })[]
   vatBreakdown?: VatBucket[]
   cashierName?: string
   customerName?: string
@@ -168,7 +171,7 @@ export function buildTicketPdf(data: TicketData, settings: AppSettings | null): 
 
   // --- Paiements ---
   for (const p of data.payments) {
-    row(PAYMENT_LABELS[p.method] ?? p.method, formatMoney(p.amount, currency), 8)
+    row(p.operator || PAYMENT_LABELS[p.method] || p.method, formatMoney(p.amount, currency), 8)
     if (p.method === 'especes' && p.tendered) {
       row('  Remis', formatMoney(p.tendered, currency), 7)
       row('  Rendu', formatMoney(p.change_given, currency), 8, 'bold')

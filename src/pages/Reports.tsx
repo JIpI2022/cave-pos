@@ -97,6 +97,21 @@ export default function Reports() {
     }))
   }, [payments])
 
+  /** Detail du mobile money par operateur (Orange Money, Wave...). */
+  const operatorTotals = useMemo(() => {
+    const map = new Map<string, { total: number; nb: number }>()
+    for (const p of payments) {
+      if (p.method !== 'mobile_money') continue
+      const key = p.operator?.trim() || 'Operateur non precise'
+      const cur = map.get(key) ?? { total: 0, nb: 0 }
+      cur.total += Number(p.total); cur.nb += Number(p.nb_paiements)
+      map.set(key, cur)
+    }
+    return [...map.entries()]
+      .map(([operateur, v]) => ({ operateur, ...v }))
+      .sort((a, b) => b.total - a.total)
+  }, [payments])
+
   const dailyColumns: ExportColumn<SalesDaily>[] = [
     { header: 'Date', value: (r) => formatDate(r.sale_date) },
     { header: 'Tickets', value: (r) => r.nb_tickets },
@@ -303,6 +318,26 @@ export default function Reports() {
                   </tr>
                 ))}
               </Table>
+
+              {operatorTotals.length > 0 && (
+                <>
+                  <div className="border-t border-slate-200 px-4 py-3">
+                    <h3 className="font-semibold text-slate-900">Detail du mobile money</h3>
+                    <p className="text-xs text-slate-500">
+                      A rapprocher du releve de chaque operateur.
+                    </p>
+                  </div>
+                  <Table head={['Operateur', 'Nombre', 'Total']}>
+                    {operatorTotals.map((o) => (
+                      <tr key={o.operateur}>
+                        <td className="td font-medium">{o.operateur}</td>
+                        <td className="td tabular">{o.nb}</td>
+                        <td className="td tabular font-semibold">{formatMoney(o.total, currency)}</td>
+                      </tr>
+                    ))}
+                  </Table>
+                </>
+              )}
             </div>
           )}
 

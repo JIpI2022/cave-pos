@@ -8,19 +8,23 @@
 -- Parametres de la boutique (a adapter)
 -- ---------------------------------------------------------------------
 update public.app_settings set
-  company_name         = 'Cave des Coteaux',
-  address              = '12 rue des Vignerons, 33000 Bordeaux',
-  phone                = '05 56 00 00 00',
-  tax_id               = 'SIRET 000 000 000 00000',
-  currency             = 'EUR',
-  currency_symbol      = E'€',
-  currency_decimals    = 2,
-  timezone             = 'Europe/Paris',
+  company_name         = 'Cave des Deux Plateaux',
+  address              = 'Cocody Deux Plateaux, Abidjan, Cote d''Ivoire',
+  phone                = '+225 27 22 00 00 00',
+  tax_id               = 'RCCM ABJ-2026-B-00000 / CC 2026000000',
+  -- Franc CFA : aucune decimale, le symbole s'ecrit apres le montant
+  currency             = 'XOF',
+  currency_symbol      = 'FCFA',
+  currency_decimals    = 0,
+  -- Fuseau d'Abidjan (UTC+0) : les journees comptables se cloturent a minuit
+  -- heure locale, et non a 01h ou 02h comme avec un fuseau europeen.
+  timezone             = 'Africa/Abidjan',
   default_vat_rate     = 20.00,
   internal_code_prefix = 'CAV',
   internal_code_padding = 6,
   ticket_prefix        = 'T',
   low_stock_default    = 6,
+  mobile_money_operators = array['Orange Money', 'MTN MoMo', 'Moov Money', 'Wave'],
   ticket_footer        = E'Merci de votre visite !\nL''abus d''alcool est dangereux pour la sante.'
 where id = 1;
 
@@ -52,26 +56,30 @@ on conflict (code) do nothing;
 -- Fournisseurs
 -- ---------------------------------------------------------------------
 insert into public.suppliers (name, contact, phone, email, address) values
-  ('Domaines & Terroirs',   'M. Leclerc',  '05 56 11 22 33', 'contact@domaines-terroirs.fr', 'Bordeaux'),
-  ('Maison Rhone Vallee',   'Mme Girard',  '04 75 44 55 66', 'ventes@rhone-vallee.fr',       'Tain-l''Hermitage'),
-  ('Negoce Champagne Est',  'M. Perrin',   '03 26 77 88 99', 'commandes@nce.fr',             'Reims'),
-  ('Spiritueux Import',     'M. Da Silva', '01 42 00 11 22', 'pro@spiritueux-import.fr',     'Paris'),
-  ('Brasserie Locale',      'Mme Morel',   '02 40 33 44 55', 'pro@brasserie-locale.fr',      'Nantes')
+  ('Domaines & Terroirs',   'M. Kouassi',  '+225 27 21 00 11 22', 'contact@domaines-terroirs.ci', 'Zone 4, Abidjan'),
+  ('Maison Rhone Vallee',   'Mme Girard',  '+225 27 21 00 33 44', 'ventes@rhone-vallee.ci',       'Treichville, Abidjan'),
+  ('Negoce Champagne Est',  'M. Perrin',   '+225 27 22 00 55 66', 'commandes@nce.ci',             'Plateau, Abidjan'),
+  ('Spiritueux Import',     'M. Da Silva', '+225 27 21 00 77 88', 'pro@spiritueux-import.ci',     'Port-Bouet, Abidjan'),
+  ('Brasserie Locale',      'Mme Morel',   '+225 27 23 00 99 00', 'pro@brasserie-locale.ci',      'Yopougon, Abidjan')
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------
 -- Clients de demonstration
 -- ---------------------------------------------------------------------
 insert into public.customers (name, phone, email, address) values
-  ('Restaurant Le Pressoir', '05 56 98 76 54', 'achats@lepressoir.fr', '8 place du Marche, Bordeaux'),
-  ('Mme Dubois Claire',      '06 12 34 56 78', 'c.dubois@email.fr',    'Merignac'),
-  ('Comite d''entreprise Atlas', '05 57 00 00 11', 'ce@atlas.fr',      'Pessac')
+  ('Restaurant Le Pressoir',     '+225 07 07 00 00 01', 'achats@lepressoir.ci', 'Zone 4, Abidjan'),
+  ('Mme Aka Marie-Claire',       '+225 05 05 00 00 02', 'mc.aka@email.ci',      'Cocody, Abidjan'),
+  ('Comite d''entreprise Atlas',  '+225 01 01 00 00 03', 'ce@atlas.ci',          'Plateau, Abidjan')
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------
 -- Catalogue : 22 references (vins, champagnes, spiritueux, bieres, softs)
--- Les prix sont donnes a titre d'exemple. purchase_price_ht et
--- sale_price_ttc s'entendent pour UNE unite de base (1 bouteille).
+-- Prix indicatifs en FCFA pour le marche ivoirien (convertis depuis l'euro
+-- a la parite fixe 1 EUR = 655,957 FCFA, puis arrondis a la coupure la plus
+-- proche). Ajustez-les a vos tarifs reels.
+-- purchase_price_ht et sale_price_ttc s'entendent pour UNE unite de base
+-- (1 bouteille), TVA a 20 % : passez-la a 18 % dans Parametres si votre
+-- activite releve du taux normal ivoirien.
 -- ---------------------------------------------------------------------
 with cat as (select code, id from public.categories),
      sup as (select name, id from public.suppliers)
@@ -85,23 +93,23 @@ select v.name,
        v.achat, v.vente, 20.00, v.barcode, v.unit::public.product_unit, v.pack, v.seuil
 from (values
   -- nom, categorie, appellation, millesime, cl, fournisseur, achat HT, vente TTC, EAN, unite, pack, seuil
-  ('Chateau Margaux Second Vin',  'vin_rouge',  'Margaux',                2019, 750, 'Domaines & Terroirs', 42.00, 79.90, '3760012345670', 'bouteille', 1, 6),
+  ('Chateau Margaux Second Vin',  'vin_rouge',  'Margaux',                2019, 750, 'Domaines & Terroirs', 27600, 52400, '3760012345670', 'bouteille', 1, 6),
   ('Chateau Les Ormes Bordeaux',  'vin_rouge',  'Bordeaux Superieur',     2020, 750, 'Domaines & Terroirs',  5.20,  9.90, '3760012345687', 'bouteille', 1, 12),
-  ('Saint-Emilion Grand Cru',     'vin_rouge',  'Saint-Emilion Grand Cru',2018, 750, 'Domaines & Terroirs', 14.50, 27.50, '3760012345694', 'bouteille', 1, 6),
+  ('Saint-Emilion Grand Cru',     'vin_rouge',  'Saint-Emilion Grand Cru',2018, 750, 'Domaines & Terroirs', 9500, 18000, '3760012345694', 'bouteille', 1, 6),
   ('Crozes-Hermitage Les Galets', 'vin_rouge',  'Crozes-Hermitage',       2021, 750, 'Maison Rhone Vallee',  9.80, 18.90, '3760012345700', 'bouteille', 1, 6),
   ('Cotes du Rhone Villages',     'vin_rouge',  'Cotes du Rhone Villages',2022, 750, 'Maison Rhone Vallee',  4.60,  8.90, '3760012345717', 'bouteille', 1, 12),
-  ('Gigondas Vieilles Vignes',    'vin_rouge',  'Gigondas',               2020, 750, 'Maison Rhone Vallee', 12.00, 23.50, '3760012345724', 'bouteille', 1, 6),
-  ('Bourgogne Pinot Noir',        'vin_rouge',  'Bourgogne',              2021, 750, 'Domaines & Terroirs', 10.40, 19.90, '3760012345731', 'bouteille', 1, 6),
-  ('Chablis Premier Cru',         'vin_blanc',  'Chablis 1er Cru',        2021, 750, 'Domaines & Terroirs', 16.00, 31.00, '3760012345748', 'bouteille', 1, 6),
+  ('Gigondas Vieilles Vignes',    'vin_rouge',  'Gigondas',               2020, 750, 'Maison Rhone Vallee', 7900, 15400, '3760012345724', 'bouteille', 1, 6),
+  ('Bourgogne Pinot Noir',        'vin_rouge',  'Bourgogne',              2021, 750, 'Domaines & Terroirs', 6800, 13100, '3760012345731', 'bouteille', 1, 6),
+  ('Chablis Premier Cru',         'vin_blanc',  'Chablis 1er Cru',        2021, 750, 'Domaines & Terroirs', 10500, 20300, '3760012345748', 'bouteille', 1, 6),
   ('Sancerre Les Silex',          'vin_blanc',  'Sancerre',               2022, 750, 'Domaines & Terroirs',  9.20, 17.90, '3760012345755', 'bouteille', 1, 6),
-  ('Riesling Grand Cru',          'vin_blanc',  'Alsace Grand Cru',       2020, 750, 'Domaines & Terroirs', 11.50, 22.50, '3760012345762', 'bouteille', 1, 6),
-  ('Condrieu Viognier',           'vin_blanc',  'Condrieu',               2021, 750, 'Maison Rhone Vallee', 21.00, 39.90, '3760012345779', 'bouteille', 1, 3),
+  ('Riesling Grand Cru',          'vin_blanc',  'Alsace Grand Cru',       2020, 750, 'Domaines & Terroirs', 7500, 14800, '3760012345762', 'bouteille', 1, 6),
+  ('Condrieu Viognier',           'vin_blanc',  'Condrieu',               2021, 750, 'Maison Rhone Vallee', 13800, 26200, '3760012345779', 'bouteille', 1, 3),
   ('Muscadet Sevre-et-Maine',     'vin_blanc',  'Muscadet',               2022, 750, 'Brasserie Locale',     3.40,  6.90, '3760012345786', 'bouteille', 1, 12),
   ('Tavel Rose Tradition',        'vin_rose',   'Tavel',                  2022, 750, 'Maison Rhone Vallee',  6.10, 11.90, '3760012345793', 'bouteille', 1, 12),
   ('Cotes de Provence Rose',      'vin_rose',   'Cotes de Provence',      2023, 750, 'Domaines & Terroirs',  5.80, 11.50, '3760012345809', 'bouteille', 1, 12),
   ('Champagne Brut Tradition',    'champagne',  'Champagne',              null, 750, 'Negoce Champagne Est',18.50, 34.90, '3760012345816', 'bouteille', 1, 6),
   ('Champagne Blanc de Blancs',   'champagne',  'Champagne',              2016, 750, 'Negoce Champagne Est',27.00, 52.00, '3760012345823', 'bouteille', 1, 3),
-  ('Cremant de Loire Brut',       'champagne',  'Cremant de Loire',       null, 750, 'Negoce Champagne Est', 6.40, 12.90, '3760012345830', 'bouteille', 1, 6),
+  ('Cremant de Loire Brut',       'champagne',  'Cremant de Loire',       null, 750, 'Negoce Champagne Est', 4200, 8500, '3760012345830', 'bouteille', 1, 6),
   ('Whisky Single Malt 12 ans',   'spiritueux', 'Ecosse - Speyside',      null, 700, 'Spiritueux Import',   24.00, 46.90, '5000012345842', 'bouteille', 1, 3),
   ('Rhum Agricole VSOP',          'spiritueux', 'Martinique',             null, 700, 'Spiritueux Import',   19.50, 37.50, '3760012345854', 'bouteille', 1, 3),
   ('Cognac VS',                   'spiritueux', 'Cognac',                 null, 700, 'Spiritueux Import',   17.00, 32.90, '3760012345861', 'bouteille', 1, 3),
@@ -122,7 +130,7 @@ select 'Cuvee du Patron (vrac)',
        (select id from public.categories where code = 'vin_rouge'),
        'Vin de France', 2023, 1000,
        (select id from public.suppliers where name = 'Domaines & Terroirs'),
-       2.10, 4.90, 20.00, 'bouteille', 24
+       1375, 3200, 20.00, 'bouteille', 24
 where not exists (select 1 from public.products where name = 'Cuvee du Patron (vrac)');
 
 -- ---------------------------------------------------------------------

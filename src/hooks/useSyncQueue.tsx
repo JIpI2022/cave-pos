@@ -37,6 +37,8 @@ export async function pushSale(entry: QueuedSale): Promise<Sale> {
 export function SyncProvider({ children }: { children: ReactNode }) {
   const online = useOnline()
   const { session } = useAuth()
+  // Identifiant stable : l objet session change a chaque rafraichissement de jeton.
+  const userId = session?.user?.id ?? null
   const [pending, setPending] = useState<QueuedSale[]>([])
   const [syncing, setSyncing] = useState(false)
   const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null)
@@ -47,7 +49,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const syncNow = useCallback(async (): Promise<number> => {
-    if (running.current || !navigator.onLine || !session) return 0
+    if (running.current || !navigator.onLine || !userId) return 0
     running.current = true
     setSyncing(true)
     let sent = 0
@@ -73,14 +75,14 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setSyncing(false)
     }
     return sent
-  }, [session, refresh])
+  }, [userId, refresh])
 
   // Chargement initial + synchro au retour du reseau
   useEffect(() => { void refresh() }, [refresh])
 
   useEffect(() => {
-    if (online && session) void syncNow()
-  }, [online, session, syncNow])
+    if (online && userId) void syncNow()
+  }, [online, userId, syncNow])
 
   // Nouvelle tentative toutes les 30 s tant qu'il reste des ventes en attente
   useEffect(() => {

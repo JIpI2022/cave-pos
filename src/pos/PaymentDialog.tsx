@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Banknote, Check, CreditCard, Delete, Smartphone, Trash2 } from 'lucide-react'
 import { Alert, Button, Field, Input, Modal } from '@/components/ui'
+import { useSettings } from '@/hooks/useSettings'
 import { computeChange, isFullyPaid, remainingToPay, roundTo } from '@/lib/calc'
 import { formatMoney, PAYMENT_LABELS, type CurrencyConfig } from '@/lib/format'
 import type { PaymentMethod, SalePayloadPayment } from '@/types/database'
@@ -43,11 +44,18 @@ export default function PaymentDialog({
   onClose: () => void
   onConfirm: (payments: SalePayloadPayment[]) => void
 }) {
+  const { settings } = useSettings()
+  const operators = settings?.mobile_money_operators?.length
+    ? settings.mobile_money_operators
+    : ['Orange Money', 'MTN MoMo', 'Moov Money', 'Wave']
+
   const [payments, setPayments] = useState<SalePayloadPayment[]>([])
   const [method, setMethod] = useState<PaymentMethod>('especes')
   const [amountText, setAmountText] = useState('')
   const [tenderedText, setTenderedText] = useState('')
   const [reference, setReference] = useState('')
+  /** Operateur mobile money choisi pour le paiement en cours. */
+  const [operator, setOperator] = useState('')
 
   const remaining = useMemo(
     () => remainingToPay(totalDue, payments.map((p) => ({ method: p.method, amount: p.amount })), currency.decimals),
@@ -59,6 +67,7 @@ export default function PaymentDialog({
     setPayments([])
     setMethod('especes')
     setReference('')
+    setOperator(operators[0] ?? '')
     setTenderedText('')
     setAmountText(formatInput(totalDue, currency.decimals))
   }, [open, totalDue, currency.decimals])
@@ -96,6 +105,7 @@ export default function PaymentDialog({
       change_given: method === 'especes' && tendered > 0
         ? computeChange(capped, tendered, currency.decimals) : 0,
       reference: reference.trim(),
+      operator: method === 'mobile_money' ? operator : '',
     }])
     setReference('')
     setTenderedText('')
@@ -110,6 +120,7 @@ export default function PaymentDialog({
       change_given: method === 'especes' && tendered > 0
         ? computeChange(remaining, tendered, currency.decimals) : 0,
       reference: reference.trim(),
+      operator: method === 'mobile_money' ? operator : '',
     }
     onConfirm([...payments, single])
   }
@@ -161,7 +172,7 @@ export default function PaymentDialog({
             {METHODS.map((m) => (
               <button
                 key={m.value}
-                onClick={() => { setMethod(m.value); setTenderedText('') }}
+                onClick={() => { setMethod(m.value); setTenderedText(''); setReference('') }}
                 className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs font-semibold transition ${
                   method === m.value
                     ? 'border-wine-700 bg-wine-50 text-wine-800'
@@ -211,12 +222,36 @@ export default function PaymentDialog({
               )}
             </>
           ) : (
-            <Field
-              label="Reference de transaction"
-              hint={method === 'carte' ? 'N° de ticket du terminal (facultatif).' : 'N° de transaction mobile money (facultatif).'}
-            >
-              <Input value={reference} onChange={(e) => setReference(e.target.value)} />
-            </Field>
+            <>
+              {method === 'mobile_money' && (
+                <Field label="Operateur" required>
+                  <div className="flex flex-wrap gap-2">
+                    {operators.map((op) => (
+                      <button
+                        key={op}
+                        type="button"
+                        onClick={() => setOperator(op)}
+                        className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                          operator === op
+                            ? 'border-wine-700 bg-wine-50 text-wine-800'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {op}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+              )}
+              <Field
+                label="Reference de transaction"
+                hint={method === 'carte'
+                  ? 'N° de ticket du terminal (facultatif).'
+                  : 'N° de transaction communique par l operateur (facultatif).'}
+              >
+                <Input value={reference} onChange={(e) => setReference(e.target.value)} />
+              </Field>
+            </>
           )}
         </div>
 
@@ -248,7 +283,7 @@ export default function PaymentDialog({
                 {payments.map((p, i) => (
                   <li key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                     <span>
-                      {PAYMENT_LABELS[p.method]}
+                      {p.operator || PAYMENT_LABELS[p.method]}
                       {p.change_given ? ` · rendu ${formatMoney(p.change_given, currency)}` : ''}
                       {p.reference ? ` · ${p.reference}` : ''}
                     </span>

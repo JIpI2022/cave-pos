@@ -67,7 +67,7 @@ select p.name, sl.quantity from public.stock_levels sl
  where sl.location_id = (select id from public.locations where code = 'BOUTIQUE')
    and p.id in (:'p1', :'p2') order by p.name;
 
-select '--- 6. Vente carte puis mixte ---' as etape;
+select '--- 6. Vente mixte : carte + mobile money + especes ---' as etape;
 select ticket_ref, total_ttc from public.pos_create_sale(jsonb_build_object(
   'client_uuid', 'aaaaaaaa-0000-0000-0000-000000000002',
   'cash_session_id', :'cs',
@@ -75,8 +75,14 @@ select ticket_ref, total_ttc from public.pos_create_sale(jsonb_build_object(
   'items', jsonb_build_array(jsonb_build_object('product_id', :'p2',
             'quantity', 2, 'unit_price_ttc', 31.00, 'vat_rate', 20)),
   'payments', jsonb_build_array(
-     jsonb_build_object('method', 'carte', 'amount', 40),
+     jsonb_build_object('method', 'carte', 'amount', 20),
+     jsonb_build_object('method', 'mobile_money', 'amount', 20,
+                        'operator', 'Orange Money', 'reference', 'OM-2026-0001'),
      jsonb_build_object('method', 'especes', 'amount', 22, 'tendered', 22, 'change_given', 0))));
+
+select method, operator, amount, reference from public.payments
+ where sale_id = (select id from public.sales where client_uuid = 'aaaaaaaa-0000-0000-0000-000000000002')
+ order by amount desc, method;
 
 select '--- 7. Retour d''un article (1 Chablis) ---' as etape;
 select quantity, amount_ttc, reason from public.return_sale_item(
@@ -119,8 +125,10 @@ select '--- 12. Cloture de caisse (rapport Z) ---' as etape;
 select public.cash_session_expected(:'cs') as especes_theoriques;
 select opening_float, counted_cash, expected_cash, cash_gap
   from public.close_cash_session(:'cs', 95, 'Comptage du soir');
-select nb_tickets, ca_ttc, total_especes, total_carte, total_retours, nb_annulations
+select nb_tickets, ca_ttc, total_especes, total_carte, total_mobile_money,
+       total_retours, nb_annulations
   from public.v_cash_session_report where id = :'cs';
+select mobile_money_detail from public.v_cash_session_report where id = :'cs';
 
 select '--- 13. Journal d''audit ---' as etape;
 select action, entity, details from public.audit_log order by id;

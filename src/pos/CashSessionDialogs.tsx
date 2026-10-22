@@ -195,6 +195,10 @@ export function CloseCashDialog({
       { label: 'Especes', value: formatMoney(r.total_especes, currency) },
       { label: 'Carte bancaire', value: formatMoney(r.total_carte, currency) },
       { label: 'Mobile money', value: formatMoney(r.total_mobile_money, currency) },
+      ...(r.mobile_money_detail ?? []).map((d) => ({
+        label: `    dont ${d.operateur ?? 'operateur non precise'}`,
+        value: formatMoney(d.total, currency),
+      })),
       { label: 'Retours / remboursements', value: formatMoney(r.total_retours, currency) },
       { label: 'Ventes annulees', value: String(r.nb_annulations) },
       { label: 'Fond de caisse', value: formatMoney(r.opening_float, currency) },
@@ -242,6 +246,13 @@ export function CloseCashDialog({
             <Line label="Especes encaissees" value={formatMoney(current.total_especes, currency)} />
             <Line label="Carte bancaire" value={formatMoney(current.total_carte, currency)} />
             <Line label="Mobile money" value={formatMoney(current.total_mobile_money, currency)} />
+            {(current.mobile_money_detail ?? []).map((d) => (
+              <Line
+                key={d.operateur ?? 'inconnu'}
+                label={`    dont ${d.operateur ?? 'operateur non precise'}`}
+                value={formatMoney(d.total, currency)}
+              />
+            ))}
             <Line label="Retours / remboursements" value={formatMoney(current.total_retours, currency)} />
             <Line label="Fond de caisse" value={formatMoney(current.opening_float, currency)} />
             <Line label="Ventes annulees" value={String(current.nb_annulations)} />

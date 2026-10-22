@@ -84,7 +84,7 @@ export default function Sales() {
     { header: 'Total TTC', value: (s) => s.total_ttc },
     { header: 'Remises', value: (s) => s.discount_total },
     { header: 'Moyens de paiement', value: (s) =>
-        s.payments.map((p) => `${PAYMENT_LABELS[p.method]} ${p.amount}`).join(' + ') },
+        s.payments.map((p) => `${p.operator || PAYMENT_LABELS[p.method]} ${p.amount}`).join(' + ') },
     { header: 'Motif annulation', value: (s) => s.cancel_reason ?? '' },
   ]
 
@@ -370,7 +370,7 @@ function SaleDetail({
                 {sale.payments.map((p) => (
                   <li key={p.id} className="flex justify-between px-3 py-2 text-sm">
                     <span>
-                      {PAYMENT_LABELS[p.method]}
+                      {p.operator || PAYMENT_LABELS[p.method]}
                       {p.tendered ? ` · remis ${formatMoney(p.tendered, currency)}` : ''}
                       {p.change_given ? ` · rendu ${formatMoney(p.change_given, currency)}` : ''}
                       {p.reference ? ` · ${p.reference}` : ''}

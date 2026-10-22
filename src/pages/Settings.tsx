@@ -88,6 +88,7 @@ function ShopSettings() {
       ticket_prefix: settings.ticket_prefix ?? 'T',
       ticket_footer: settings.ticket_footer ?? '',
       low_stock_default: String(settings.low_stock_default ?? 6),
+      mobile_money_operators: (settings.mobile_money_operators ?? []).join(', '),
     })
   }, [settings])
 
@@ -113,6 +114,10 @@ function ShopSettings() {
         ticket_prefix: form.ticket_prefix,
         ticket_footer: form.ticket_footer,
         low_stock_default: parseNumber(form.low_stock_default) ?? 6,
+        mobile_money_operators: form.mobile_money_operators
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean),
       })
       toast.success('Parametres enregistres.')
       await reload()
@@ -177,6 +182,17 @@ function ShopSettings() {
         </Field>
         <Field label="Seuil d alerte par defaut">
           <Input value={form.low_stock_default ?? ''} onChange={(e) => set('low_stock_default', e.target.value)} inputMode="decimal" />
+        </Field>
+        <Field
+          label="Operateurs de paiement mobile"
+          className="sm:col-span-4"
+          hint="Separes par des virgules. Ils apparaissent comme boutons en caisse et sont detailles dans le rapport Z."
+        >
+          <Input
+            value={form.mobile_money_operators ?? ''}
+            onChange={(e) => set('mobile_money_operators', e.target.value)}
+            placeholder="Orange Money, MTN MoMo, Moov Money, Wave"
+          />
         </Field>
       </div>
 

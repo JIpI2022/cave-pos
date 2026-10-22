@@ -12,6 +12,7 @@ internet**, et ne dépend d'aucun ordinateur allumé en permanence.
 | **Base de données** | Supabase (PostgreSQL + authentification + sécurité par ligne) |
 | **Mobile** | PWA installable, caisse utilisable hors ligne |
 | **Langue / devise** | Français, dates JJ/MM/AAAA, devise paramétrable (EUR, FCFA…) |
+| **Paiements** | Espèces, carte, **mobile money par opérateur** (Orange Money, MTN MoMo, Moov Money, Wave…) |
 
 ---
 
@@ -55,7 +56,7 @@ du prix d'achat à la validation.
 
 **Caisse (point de vente)** — écran tactile, scan en continu, panier, remises par
 ligne ou sur le ticket (en % ou en montant), paiements espèces (avec rendu
-monnaie), carte, mobile money et **paiement mixte**, ouverture de caisse avec
+monnaie), carte, **mobile money avec choix de l'opérateur** et **paiement mixte**, ouverture de caisse avec
 fond de caisse, clôture avec comptage des espèces et calcul de l'écart
 (**rapport Z**), ticket imprimable au format 80 mm et téléchargeable en PDF,
 numérotation séquentielle, annulation et retour d'article réservés au gérant.
@@ -86,8 +87,13 @@ graphiques.
    - **Name** : `cave-pos` (ou le nom de votre boutique).
    - **Database Password** : cliquez sur *Generate a password* et
      **conservez-la dans un endroit sûr** (gestionnaire de mots de passe, coffre).
-   - **Region** : choisissez la région la plus proche de votre boutique
-     (`Europe (Paris)`, `Europe (Frankfurt)`, `West Africa`…).
+   - **Region** : choisissez une région proche en termes de *réseau*, pas de
+     carte. Depuis l'Afrique de l'Ouest (Côte d'Ivoire, Sénégal, Bénin…),
+     préférez `West EU (Ireland)`, `West EU (London)` ou `Central EU (Frankfurt)` :
+     la quasi-totalité du trafic ivoirien transite par l'Europe via les câbles
+     sous-marins, et `South Africa (Cape Town)` donne souvent de moins bons
+     temps de réponse malgré sa proximité apparente. Depuis l'Europe,
+     prenez la région européenne la plus proche.
 3. Cliquez sur **Create new project** et patientez 1 à 2 minutes.
 4. Dans le menu de gauche, ouvrez **SQL Editor** puis **New query**.
 5. Ouvrez le fichier **`supabase/schema.sql`** de ce projet, **copiez tout son
@@ -496,7 +502,22 @@ réception). La valeur apparaît en rouge et un inventaire la corrige.
 **Je veux passer en FCFA.**
 **Paramètres → Boutique et devise** → choisissez la devise : le symbole et le
 nombre de décimales (0 pour le FCFA) s'ajustent, y compris les coupures proposées
-au comptage de caisse.
+au comptage de caisse. Le jeu de démonstration (`seed.sql`) est déjà livré en
+FCFA, avec le fuseau `Africa/Abidjan` pour que les journées comptables se
+clôturent à minuit heure locale.
+
+**Quel taux de TVA en Côte d'Ivoire ?**
+Le taux normal est de **18 %**. Les fichiers livrés sont réglés sur **20 %** :
+changez-le dans **Paramètres → Boutique et devise → Taux de TVA par défaut**,
+puis sur les fiches produits déjà créées (le taux est figé par produit, pour
+pouvoir gérer plusieurs taux). Les ventes déjà enregistrées conservent le taux
+appliqué au moment de la vente, comme le veut la comptabilité.
+
+**Comment suivre Orange Money, Wave et les autres séparément ?**
+C'est automatique : en caisse, le mode « Mobile money » demande l'opérateur.
+Le rapport Z et l'onglet **Rapports → Moyens de paiement** détaillent ensuite
+chaque opérateur, ce qui permet de rapprocher son relevé compte par compte.
+La liste des opérateurs se modifie dans **Paramètres → Boutique et devise**.
 
 **Mes ventes hors ligne ont-elles été perdues ?**
 Non. Elles restent sur l'appareil tant qu'elles ne sont pas synchronisées. Le

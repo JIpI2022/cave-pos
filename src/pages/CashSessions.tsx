@@ -49,6 +49,10 @@ export default function CashSessions() {
       { label: 'Especes', value: formatMoney(r.total_especes, currency) },
       { label: 'Carte bancaire', value: formatMoney(r.total_carte, currency) },
       { label: 'Mobile money', value: formatMoney(r.total_mobile_money, currency) },
+      ...(r.mobile_money_detail ?? []).map((d) => ({
+        label: `    dont ${d.operateur ?? 'operateur non precise'}`,
+        value: formatMoney(d.total, currency),
+      })),
       { label: 'Retours / remboursements', value: formatMoney(r.total_retours, currency) },
       { label: 'Ventes annulees', value: String(r.nb_annulations) },
       { label: 'Fond de caisse', value: formatMoney(r.opening_float, currency) },

@@ -27,13 +27,17 @@ const SettingsContext = createContext<SettingsState | null>(null)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth()
+  // On se cale sur l identifiant de l utilisateur, PAS sur l objet session :
+  // Supabase en recree un a chaque rafraichissement de jeton, ce qui
+  // relancerait le chargement des parametres en boucle.
+  const userId = session?.user?.id ?? null
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [locations, setLocations] = useState<Location[]>([])
   const [loading, setLoading] = useState(true)
 
   const reload = useCallback(async () => {
-    if (!session) { setLoading(false); return }
+    if (!userId) { setLoading(false); return }
     setLoading(true)
 
     const [s, c, l] = await Promise.all([
@@ -52,7 +56,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     else { const cached = await cacheGet<Location[]>('locations'); if (cached) setLocations(cached.data) }
 
     setLoading(false)
-  }, [session])
+  }, [userId])
 
   useEffect(() => { void reload() }, [reload])
 

@@ -65,18 +65,23 @@ export default function Pos() {
   const [ticketDiscountOpen, setTicketDiscountOpen] = useState(false)
 
   // ---- Session de caisse en cours -------------------------------------
+  // L objet `salesLocation` est recree a chaque chargement des parametres :
+  // on se cale sur son identifiant pour ne pas relancer la recherche de
+  // session de caisse (et donc le voile de chargement) sans raison.
+  const salesLocationId = salesLocation?.id ?? null
+
   const loadSession = useCallback(async () => {
-    if (!salesLocation) { setSessionLoading(false); return }
+    if (!salesLocationId) { setSessionLoading(false); return }
     setSessionLoading(true)
     const { data } = await supabase
       .from('cash_sessions')
       .select('*')
       .eq('status', 'ouverte')
-      .eq('location_id', salesLocation.id)
+      .eq('location_id', salesLocationId)
       .maybeSingle()
     setSession((data ?? null) as CashSession | null)
     setSessionLoading(false)
-  }, [salesLocation])
+  }, [salesLocationId])
 
   useEffect(() => { void loadSession() }, [loadSession])
 
@@ -87,27 +92,29 @@ export default function Pos() {
   }, [])
 
   // ---- Ajout d'un article ---------------------------------------------
+  const { findByCode, search: searchCatalog } = catalog
+
   const addByCode = useCallback((code: string) => {
-    const product = catalog.findByCode(code)
+    const product = findByCode(code)
     if (product) {
       cart.addProduct(product)
       setSearch('')
       return
     }
     // Code inconnu : recherche par nom en secours, sinon proposition de creation.
-    const matches = catalog.search(code, 2)
+    const matches = searchCatalog(code, 2)
     if (matches.length === 1) {
       cart.addProduct(matches[0])
       setSearch('')
       return
     }
     setUnknownCode(code)
-  }, [catalog, cart])
+  }, [findByCode, searchCatalog, cart])
 
   const visibleProducts = useMemo(() => {
-    const list = catalog.search(search, 120)
+    const list = searchCatalog(search, 120)
     return categoryFilter ? list.filter((p) => p.category_id === categoryFilter) : list
-  }, [catalog, search, categoryFilter])
+  }, [searchCatalog, search, categoryFilter])
 
   // ---- Enregistrement de la vente -------------------------------------
   async function confirmSale(payments: SalePayloadPayment[]) {
@@ -184,6 +191,7 @@ export default function Pos() {
         amount: p.amount,
         tendered: p.tendered ?? null,
         change_given: p.change_given ?? 0,
+        operator: p.operator ?? '',
       })),
       vatBreakdown: totals.vatBreakdown,
       cashierName: profile?.full_name || profile?.email,

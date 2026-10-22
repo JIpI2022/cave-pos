@@ -73,12 +73,16 @@ create table if not exists public.app_settings (
   ticket_footer        text    default 'Merci de votre visite !',
   ticket_prefix        text    not null default 'T',
   low_stock_default    numeric(14,2) not null default 6,
+  -- Operateurs de paiement mobile proposes en caisse (Orange Money, Wave...)
+  mobile_money_operators text[] not null default array['Orange Money','MTN MoMo','Moov Money','Wave'],
   updated_at           timestamptz not null default now()
 );
 -- Colonnes ajoutees apres coup (permet de rejouer le script sur une base existante)
 alter table public.app_settings add column if not exists timezone text not null default 'Europe/Paris';
 alter table public.app_settings add column if not exists ticket_prefix text not null default 'T';
 alter table public.app_settings add column if not exists low_stock_default numeric(14,2) not null default 6;
+alter table public.app_settings add column if not exists mobile_money_operators text[] not null
+  default array['Orange Money','MTN MoMo','Moov Money','Wave'];
 
 insert into public.app_settings (id) values (1) on conflict (id) do nothing;
 
@@ -723,9 +727,14 @@ create table if not exists public.payments (
   tendered     numeric(14,2),                               -- montant remis par le client (especes)
   change_given numeric(14,2) not null default 0,            -- rendu monnaie
   reference    text default '',                             -- n° de transaction mobile money / carte
+  -- Operateur du paiement mobile (Orange Money, MTN MoMo, Moov Money, Wave...).
+  -- Vide pour les especes et la carte. Permet de rapprocher chaque compte
+  -- separement a la cloture de caisse.
+  operator     text not null default '',
   created_at   timestamptz not null default now()
 );
 create index if not exists idx_payments_sale on public.payments (sale_id);
+alter table public.payments add column if not exists operator text not null default '';
 
 create table if not exists public.sale_returns (
   id           uuid primary key default gen_random_uuid(),
@@ -1000,13 +1009,14 @@ begin
   -- ---- Paiements --------------------------------------------------------
   for pay in select jsonb_array_elements(v_payments) loop
     if coalesce((pay ->> 'amount')::numeric, 0) > 0 then
-      insert into public.payments (sale_id, method, amount, tendered, change_given, reference)
+      insert into public.payments (sale_id, method, amount, tendered, change_given, reference, operator)
       values (v_sale.id,
               (pay ->> 'method')::public.payment_method,
               round((pay ->> 'amount')::numeric, 2),
               nullif(pay ->> 'tendered', '')::numeric,
               round(coalesce((pay ->> 'change_given')::numeric, 0), 2),
-              coalesce(pay ->> 'reference', ''));
+              coalesce(pay ->> 'reference', ''),
+              coalesce(pay ->> 'operator', ''));
       v_paid := v_paid + round((pay ->> 'amount')::numeric, 2);
     end if;
   end loop;
@@ -1261,12 +1271,13 @@ alter view public.v_top_products set (security_invoker = on);
 create or replace view public.v_payments_breakdown as
 select (s.created_at at time zone public.report_tz())::date as sale_date,
        pm.method,
+       pm.operator,
        count(*)                     as nb_paiements,
        round(sum(pm.amount), 2)     as total,
        s.cash_session_id
   from public.payments pm
   join public.sales s on s.id = pm.sale_id and s.status = 'validee'
- group by 1, 2, 5;
+ group by 1, 2, 3, 6;
 alter view public.v_payments_breakdown set (security_invoker = on);
 
 -- 13.10 Rapport Z : synthese d'une session de caisse
@@ -1284,7 +1295,8 @@ select cs.id, cs.location_id, cs.status, cs.opening_float, cs.opened_at, cs.clos
        coalesce(pa.carte, 0)            as total_carte,
        coalesce(pa.mobile, 0)           as total_mobile_money,
        coalesce(re.total, 0)            as total_retours,
-       coalesce(an.nb, 0)               as nb_annulations
+       coalesce(an.nb, 0)               as nb_annulations,
+       coalesce(mo.detail, '[]'::jsonb) as mobile_money_detail
   from public.cash_sessions cs
   join public.locations l on l.id = cs.location_id
   left join public.profiles po on po.id = cs.opened_by
@@ -1307,7 +1319,20 @@ select cs.id, cs.location_id, cs.status, cs.opening_float, cs.opened_at, cs.clos
          on re.cash_session_id = cs.id
   left join (select cash_session_id, count(*) nb
                from public.sales where status = 'annulee' group by 1) an
-         on an.cash_session_id = cs.id;
+         on an.cash_session_id = cs.id
+  -- Detail du mobile money par operateur, pour rapprocher chaque compte
+  left join (select cash_session_id,
+                    jsonb_agg(jsonb_build_object('operateur', operateur, 'total', total)
+                              order by total desc) as detail
+               from (select s.cash_session_id,
+                            nullif(p.operator, '') as operateur,
+                            round(sum(p.amount), 2) as total
+                       from public.payments p
+                       join public.sales s on s.id = p.sale_id and s.status = 'validee'
+                      where p.method = 'mobile_money'
+                      group by 1, 2) x
+              group by 1) mo
+         on mo.cash_session_id = cs.id;
 alter view public.v_cash_session_report set (security_invoker = on);
 
 -- 13.11 Etat d'une session d'inventaire (ecarts)
