@@ -85,7 +85,13 @@ export function describeError(error: unknown): string {
   if (/duplicate key value.*client_uuid/i.test(msg)) return 'Cette vente a deja ete enregistree.'
   if (/duplicate key value/i.test(msg)) return 'Cet enregistrement existe deja.'
   if (/row-level security|violates row-level/i.test(msg)) return 'Droits insuffisants pour cette operation.'
-  if (/Failed to fetch|NetworkError|network/i.test(msg)) return 'Serveur injoignable : verifiez votre connexion.'
+  // Chaque navigateur a sa propre formulation pour « la requete n'est jamais
+  // partie » : Chrome dit « Failed to fetch », Safari/iOS « Load failed »,
+  // Firefox « NetworkError ». Sans cela, l'utilisateur lit de l'anglais brut.
+  if (/Failed to fetch|Load failed|NetworkError|network ?error|connection was lost|appears to be offline|ERR_[A-Z_]+|network/i.test(msg)) {
+    return `Serveur ${supabaseHost} injoignable. Verifiez la connexion de cet appareil ; `
+      + `si le probleme persiste sur plusieurs appareils, c'est le serveur qui ne repond pas.`
+  }
   if (/JWT expired/i.test(msg)) return 'Session expiree : reconnectez-vous.'
 
   return [msg, e.details, e.hint].filter(Boolean).join(' - ')
