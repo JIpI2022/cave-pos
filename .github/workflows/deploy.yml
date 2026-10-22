@@ -53,11 +53,22 @@ jobs:
 
       - name: Compilation de l application
         env:
-          # https://<utilisateur>.github.io/<depot>/  ->  base = /<depot>/
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
+          # Chemin de base du site :
+          #  - adresse GitHub par defaut  -> https://<compte>.github.io/<depot>/
+          #    le site vit dans un sous-dossier : base = /<depot>/
+          #  - nom de domaine personnel   -> https://caisse.exemple.ci/
+          #    le site vit a la racine    : base = /
+          # La presence du fichier public/CNAME signale un domaine personnel.
+          if [ -f public/CNAME ]; then
+            export VITE_BASE_PATH="/"
+            echo "Domaine personnel detecte ($(cat public/CNAME)) : base = /"
+          else
+            export VITE_BASE_PATH="/${{ github.event.repository.name }}/"
+            echo "Adresse GitHub par defaut : base = $VITE_BASE_PATH"
+          fi
           if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
             echo "::warning::Secrets VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY absents :"
             echo "::warning::l application affichera l ecran « Configuration Supabase manquante »."

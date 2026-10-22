@@ -213,6 +213,30 @@ jeton de GitHub Actions n'a pas). Sans elle, le déploiement échoue sur
 À partir de maintenant, **chaque modification envoyée sur `main` redéploie
 automatiquement le site**.
 
+### Changer l'adresse du site
+
+**Solution gratuite : renommer le dépôt.** L'adresse suit le nom du dépôt
+(`.../cave-pos/` devient `.../caisse/`). Le workflow s'adapte tout seul, il n'y
+a rien d'autre à faire. Cas particulier : un dépôt nommé exactement
+`<votre-compte>.github.io` est servi à la racine, sans sous-dossier.
+
+**Avec votre propre nom de domaine** (par exemple `caisse.maboutique.ci`) :
+
+1. Achetez le domaine chez un registraire (environ 10 à 15 € par an).
+2. Créez un fichier `public/CNAME` contenant **uniquement** le domaine :
+   ```
+   caisse.maboutique.ci
+   ```
+   Sa seule présence suffit : le workflow bascule automatiquement le chemin de
+   base du site. Sans cela, le site s'afficherait en page blanche.
+3. Dépôt GitHub → `Settings` → `Pages` → **Custom domain** : saisissez le même
+   domaine, puis cochez **Enforce HTTPS** (certificat gratuit, délai de quelques
+   minutes).
+4. Chez votre registraire, créez un enregistrement **CNAME** pointant vers
+   `<votre-compte>.github.io.` (pour un sous-domaine comme `caisse.`), ou les
+   enregistrements **A** vers les adresses de GitHub Pages pour un domaine racine.
+   La page *Settings → Pages* affiche les valeurs exactes à utiliser.
+
 ---
 
 ## 3. Installer l'application sur un téléphone
