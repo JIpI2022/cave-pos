@@ -50,9 +50,9 @@ jobs:
         run: npm run audit:dependances
 
       - name: Rapport complet, outils de developpement compris
-        # Informatif : ces paquets ne sont pas livres, mais on garde un oeil.
-        continue-on-error: true
-        run: npm audit
+        # Purement informatif : ces paquets ne sont pas livres au navigateur.
+        # « || true » evite une annotation d'echec trompeuse dans le journal.
+        run: npm audit || true
 
   intrusion:
     name: Tentatives d'intrusion sur base jetable
